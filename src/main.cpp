@@ -10,6 +10,8 @@
 #include "program.hh"
 #include "object_data.hh"
 
+#define WINDOW_HORIZ_MID 512
+#define WINDOW_VERT_MID 512
 
 #define TEST_OPENGL_ERROR()                                                             \
   do {									\
@@ -18,13 +20,120 @@
   } while(0)
 
 program *prog = nullptr;
-
 GLsizei skull_vertex_count = 0;
-
 GLuint object_id = 0;
+
+bool locked = true;
+
+float camX = 0.0f, camY = 0.0f, camZ = -50.0f;
+float horizAngl = 90.0f;
+float vertAngl = 0.0f;
+const float CAM_SPEED = 2.0f;
+const float MOUSE_SENS = 0.2f;
+
+bool mouseWarped = false;
+
+int lastMouseX = WINDOW_HORIZ_MID;
+int lastMouseY = WINDOW_VERT_MID;
+
+void handleMouseLook(int x, int y) {
+    const int CX = WINDOW_HORIZ_MID;
+    const int CY = WINDOW_VERT_MID;
+
+    if (mouseWarped) {
+        mouseWarped = false;
+        return;
+    }
+
+    float dx = (x - CX) * MOUSE_SENS;
+    // We flip on y because the coordinates are inversed ?
+    float dy = (CY - y) * MOUSE_SENS;
+
+    horizAngl += dx;
+    vertAngl += dy;
+    // Clamp so we can't loop
+    if (vertAngl >  89.0f) vertAngl =  89.0f;
+    if (vertAngl < -89.0f) vertAngl = -89.0f;
+
+    mouseWarped = true;
+    glutWarpPointer(CX, CY);
+
+    glutPostRedisplay();
+}
+
+void get_camera_dirs(float& fx, float& fy, float& fz,
+                     float& rx, float& ry, float& rz)
+{
+    // get Angle as radians
+    float radhorizAngl = horizAngl * M_PI / 180.0f;
+    float radvertAngl = vertAngl * M_PI / 180.0f;
+
+    // Forward vector
+    fx = cos(radvertAngl) * cos(radhorizAngl);
+    fy = sin(radvertAngl);
+    fz = cos(radvertAngl) * sin(radhorizAngl);
+
+    float len = sqrt(fz*fz + fx*fx);
+    rx =  fz / len;
+    ry =  0.0f;
+    rz = -fx / len;
+}
+
+void handleKeyboard(unsigned char key, int x, int y) {
+    float fx, fy, fz, rx, ry, rz;
+    get_camera_dirs(fx, fy, fz, rx, ry, rz);
+
+    switch (key) {
+      // Z-Axis movement
+        case 'w': camX += fx * CAM_SPEED; camY += fy * CAM_SPEED; camZ += fz * CAM_SPEED; break;
+        case 's': camX -= fx * CAM_SPEED; camY -= fy * CAM_SPEED; camZ -= fz * CAM_SPEED; break;
+      // X-Axis movement
+        case 'a': camX -= rx * CAM_SPEED; camY -= ry * CAM_SPEED; camZ -= rz * CAM_SPEED; break;
+        case 'd': camX += rx * CAM_SPEED; camY += ry * CAM_SPEED; camZ += rz * CAM_SPEED; break;
+      // Y-Axis movement
+        case 'q': camY += CAM_SPEED; break;
+        case 'e': camY -= CAM_SPEED; break;
+      // lock cursor when `space`
+        case 32:
+          locked = !locked;
+          if (locked) {
+              glutSetCursor(GLUT_CURSOR_NONE);
+              glutPassiveMotionFunc(handleMouseLook);
+              glutWarpPointer(512, 512);
+          } else {
+              glutSetCursor(GLUT_CURSOR_INHERIT);
+              glutPassiveMotionFunc(nullptr);
+          }
+          break;
+        case 13:
+          camX = 0.0f, camY = 0.0f, camZ = -50.0f;
+          horizAngl = 90.0f;
+          vertAngl = 0.0f;
+          break;
+      // if `escape` then close window
+        case 27: exit(0);
+    }
+
+    glutPostRedisplay();
+}
+
+void update_camera() {
+    float fx, fy, fz, rx, ry, rz;
+    get_camera_dirs(fx, fy, fz, rx, ry, rz);
+
+    GLint camera_location = glGetUniformLocation(prog->program_id, "camera");
+    auto camera_mat = look_at(
+        camX, camY, camZ, // eye
+        camX + fx, camY + fy, camZ + fz, // eye + forward
+        0.0f, 1.0f, 0.0f // world up
+    );
+
+    glUniformMatrix4fv(camera_location, 1, GL_TRUE, camera_mat.get_values());
+}
 
 void display() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);TEST_OPENGL_ERROR();
+  update_camera();
   glBindVertexArray(object_id);TEST_OPENGL_ERROR();
   glDrawArrays(GL_TRIANGLES, 0, skull_vertex_count);TEST_OPENGL_ERROR();
   glBindVertexArray(0);TEST_OPENGL_ERROR();
@@ -42,7 +151,11 @@ bool init_glut(int& argc, char *argv[])
     glutInitWindowSize(1024, 1024);
     glutInitWindowPosition ( 100, 100 );
     glutCreateWindow("Shader Programming");
+
+    // Glut Callbacks
     glutDisplayFunc(display);
+    glutKeyboardFunc(handleKeyboard);
+    glutPassiveMotionFunc(handleMouseLook);
 
     std::cout << "Finished init_glut" << std::endl;
     return true;
@@ -62,7 +175,7 @@ bool init_glew()
 void init_GL() {
   glEnable(GL_DEPTH_TEST);TEST_OPENGL_ERROR();
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);TEST_OPENGL_ERROR();
-  // glEnable(GL_CULL_FACE);TEST_OPENGL_ERROR();
+  glEnable(GL_CULL_FACE);TEST_OPENGL_ERROR();
   glClearColor(1.0, 0.0, 1.0, 1.0);TEST_OPENGL_ERROR();
   glPixelStorei(GL_UNPACK_ALIGNMENT,1);
   glPixelStorei(GL_PACK_ALIGNMENT,1);
