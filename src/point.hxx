@@ -17,11 +17,6 @@ const inline Point Point::operator*(const double& scalar) const
     return Point(x * scalar, y * scalar, z * scalar);
 }
 
-const inline float Point::operator*(const Point& p) const
-{
-    return x * p.x + y * p.y + z * p.z;
-}
-
 inline Point& Point::operator=(const Point& v) {
     x = v.x; y = v.y; z = v.z;
     return *this;

@@ -18,7 +18,6 @@ public:
     const Point operator+(const Point& p) const;
     const Point operator-(const Point& p) const;
     const Point operator*(const double& scalar) const; // Translation
-    const float operator*(const Point& p) const; // Dot product
     Point& operator=(const Point& v);
 
     // Debugging

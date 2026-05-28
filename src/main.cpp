@@ -181,12 +181,23 @@ void init_textures()
   GLuint texture_id;
   glGenTextures(1, &texture_id);TEST_OPENGL_ERROR();
 
+  // GLint sampler_id = 12;
   GLint sampler_id = glGetUniformLocation(prog->program_id, "kirby_sampler");TEST_OPENGL_ERROR();
+  if (sampler_id == -1)
+    std::cout << "Sampler error" << std::endl;
   glUniform1i(sampler_id, 0);TEST_OPENGL_ERROR();
   glActiveTexture(GL_TEXTURE0);TEST_OPENGL_ERROR();
 
+  std::cout << "size: " << img.width << "x" << img.height << std::endl;
+
   glBindTexture(GL_TEXTURE_2D, texture_id);TEST_OPENGL_ERROR();
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.width, img.height, 0, GL_RGB,  GL_UNSIGNED_BYTE, img.pixels.data());TEST_OPENGL_ERROR();
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);TEST_OPENGL_ERROR();
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);TEST_OPENGL_ERROR();
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);TEST_OPENGL_ERROR();
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);TEST_OPENGL_ERROR();
+
   std::cout << "pixels: " << img.pixels.size() << std::endl;
 }
 
@@ -343,8 +354,8 @@ int main(int argc, char *argv[]) {
   std::cout << "make programs" << std::endl;
 
   init_shaders();
-  init_textures();
   init_object();
+  init_textures();
   init_POV();
   glutMainLoop();
 }

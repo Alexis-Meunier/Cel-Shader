@@ -146,17 +146,17 @@ objectData LoadOBJ(const std::string& path, const Point& offset,
         {
             float x = 0, y = 0, z = 0;
             lineSS >> x >> y >> z;
-            raw_verts.push_back({x, y, z});
+            // raw_verts.push_back({x, y, z});
 
             // Scale then rotate
-            // auto rotated = Point(x * scale, y * scale, z * scale);
-            // if (std::abs(rotation.x) > 1e-3) rotated.rotateX(rotation.x * rad);
-            // if (std::abs(rotation.y) > 1e-3) rotated.rotateY(rotation.y * rad);
-            // if (std::abs(rotation.z) > 1e-3) rotated.rotateZ(rotation.z * rad);
+            auto rotated = Point(x * scale, y * scale, z * scale);
+            if (std::abs(rotation.x) > 1e-3) rotated.rotateX(rotation.x * rad);
+            if (std::abs(rotation.y) > 1e-3) rotated.rotateY(rotation.y * rad);
+            if (std::abs(rotation.z) > 1e-3) rotated.rotateZ(rotation.z * rad);
 
-            // raw_verts.push_back({ rotated.x + offset.x,
-            //                        rotated.y + offset.y,
-            //                        rotated.z + offset.z });
+            raw_verts.push_back({ rotated.x + offset.x,
+                                   rotated.y + offset.y,
+                                   rotated.z + offset.z });
         }
 
         // texture
@@ -179,20 +179,19 @@ objectData LoadOBJ(const std::string& path, const Point& offset,
             float i = 0, j = 0, k = 0;
             lineSS >> i >> j >> k;
 
-            // auto rotated = Point(i, j, k);
-            // if (std::abs(rotation.x) > 1e-3) rotated.rotateX(rotation.x * rad);
-            // if (std::abs(rotation.y) > 1e-3) rotated.rotateY(rotation.y * rad);
-            // if (std::abs(rotation.z) > 1e-3) rotated.rotateZ(rotation.z * rad);
+            auto rotated = Point(i, j, k);
+            if (std::abs(rotation.x) > 1e-3) rotated.rotateX(rotation.x * rad);
+            if (std::abs(rotation.y) > 1e-3) rotated.rotateY(rotation.y * rad);
+            if (std::abs(rotation.z) > 1e-3) rotated.rotateZ(rotation.z * rad);
 
-            // raw_normals.push_back({rotated.x, rotated.y, rotated.z});
-            raw_normals.push_back({i, j, k});
+            raw_normals.push_back({rotated.x, rotated.y, rotated.z});
+            // raw_normals.push_back({i, j, k});
         }
 
         // polygon
         if( lineType == "f" )
         {
             std::vector<std::array<int, 3>> vertx;
-            int v, vt, vn;
             std::string refStr;
             while( lineSS >> refStr )
             {
@@ -204,9 +203,9 @@ objectData LoadOBJ(const std::string& path, const Point& offset,
                 int v = atoi( vStr.c_str() );
                 int vt = atoi( vtStr.c_str() );
                 int vn = atoi( vnStr.c_str() );
-                v  = (  v >= 0 ?  v : raw_verts.size() +  v );
-                vt = ( vt >= 0 ? vt : raw_uvs.size() + vt );
-                vn = ( vn >= 0 ? vn : raw_normals.size()   + vn );
+                v  = (  v >= 0 ?  v - 1 : raw_verts.size() +  v );
+                vt = ( vt >= 0 ? vt - 1 : raw_uvs.size() + vt );
+                vn = ( vn >= 0 ? vn - 1 : raw_normals.size() + vn );
                 vertx.push_back({v, vt, vn});
             }
 
