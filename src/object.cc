@@ -107,5 +107,5 @@ objectData from_obj(const std::string& path, const Point& offset,
         }
     }
 
-    return { out_positions, out_normals };
+    return { out_positions, out_normals, uv_position };
 }

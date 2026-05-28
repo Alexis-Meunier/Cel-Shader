@@ -175,24 +175,25 @@ bool init_glew()
 
 void init_textures()
 {
-  ImageInfo img = load_image("image.png");
+  ImageInfo img = load_image("image.jpg");
 
   // Texture
   GLuint texture_id;
-  glGenTextures(1, &texture_id);
+  glGenTextures(1, &texture_id);TEST_OPENGL_ERROR();
 
   GLint sampler_id = glGetUniformLocation(prog->program_id, "kirby_sampler");TEST_OPENGL_ERROR();
-  glUniform1i(sampler_id, 0);
-  glActiveTexture(GL_TEXTURE0);
+  glUniform1i(sampler_id, 0);TEST_OPENGL_ERROR();
+  glActiveTexture(GL_TEXTURE0);TEST_OPENGL_ERROR();
 
-  glBindTexture(GL_TEXTURE_2D, texture_id);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.width, img.height, 0, GL_RGB, GL_BYTE, img.pixels.data());
+  glBindTexture(GL_TEXTURE_2D, texture_id);TEST_OPENGL_ERROR();
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.width, img.height, 0, GL_RGB,  GL_UNSIGNED_BYTE, img.pixels.data());TEST_OPENGL_ERROR();
+  std::cout << "pixels: " << img.pixels.size() << std::endl;
 }
 
 void init_GL() {
   glEnable(GL_DEPTH_TEST);TEST_OPENGL_ERROR();
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);TEST_OPENGL_ERROR();
-  glEnable(GL_CULL_FACE);TEST_OPENGL_ERROR();
+  // glEnable(GL_CULL_FACE);TEST_OPENGL_ERROR();
   glClearColor(1.0, 0.0, 1.0, 1.0);TEST_OPENGL_ERROR();
   glPixelStorei(GL_UNPACK_ALIGNMENT,1);
   glPixelStorei(GL_PACK_ALIGNMENT,1);
@@ -249,9 +250,10 @@ bool init_object() {
   if (uv_location == -1)
     std::cout << "uv location is -1 :(" << std::endl;
   
-  objectData skull = from_obj("../objects/skull.obj", {0, 0, 100}, 1.0, {90, 0, 180});
+  objectData skull = from_obj("../objects/test.obj", {0, 0, 100}, 1.0, {90, 0, 180});
   skull_vertex_count = skull.position.size() / 3;
-  std::cout << "Loaded skull: " << skull_vertex_count << " vertices" << std::endl;
+  std::cout << "Loaded skull: " << skull.position.size() << " vertices" << std::endl;
+  std::cout << "uv: " << skull.uv_position.size() << std::endl;
 
   // auto vertex_size = vertex_buffer_data.size() * sizeof(GLfloat);
   // auto normal_flat_size = normal_flat_buffer_data.size() * sizeof(GLfloat);
@@ -341,6 +343,7 @@ int main(int argc, char *argv[]) {
   std::cout << "make programs" << std::endl;
 
   init_shaders();
+  init_textures();
   init_object();
   init_POV();
   glutMainLoop();

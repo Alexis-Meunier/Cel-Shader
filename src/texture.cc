@@ -5,7 +5,7 @@
 
 ImageInfo load_image(const std::string& filepath)
 {
-    vector<int8_t> pixels;
+    vector<unsigned char> pixels;
     int width = 0, height = 0, channels = 0;
 
     unsigned char* data = stbi_load(filepath.c_str(), &width, &height, &channels, 3);

@@ -8,7 +8,7 @@
 
 CC = g++
 
-CPP_FILES = matrix.cpp  program.cpp point.cc object.cc texture.cc
+CPP_FILES = matrix.cc  program.cc point.cc object.cc texture.cc
 CPP_FILES +=
 HXX_FILES = matrix.hh  program.hh point.hh object.hh object.hxx texture.hh
 HXX_FILES += object_data.hh
@@ -92,7 +92,7 @@ build: $(OBJ_FILES)
 .PHONY: all clean pre-build post-build main-build build skel
 
 clean:
-	rm -f $(OBJ_FILES)
+	rm -f *.o
 	rm -f $(DIST)
 	rm -rf $(SKEL_DIST_DIR).tar.bz2
 
