@@ -35,3 +35,7 @@ matrix4 look_at(const GLfloat& eyeX, const GLfloat &eyeY, const GLfloat& eyeZ,
 
 matrix4 frustum(const GLfloat& left, const GLfloat &right, const GLfloat& bottom,
              const GLfloat& top, const GLfloat& z_near, const GLfloat& z_far);
+
+vec3 vec_prod(vec3& lhs, const vec3& rhs);
+
+vec3 normalize(const vec3& vec);

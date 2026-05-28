@@ -17,5 +17,5 @@ void main() {
     // output_color = vec4(1.0, 0.0, 0.0, 1.0);
     // vec3 texel = texture(kirby_sampler, uv_position).rgb;
     // output_color = vec4(texel, 1.0);
-    output_color = vec4(uv_position.r, uv_position.g, 0.0, 1.1);
+    output_color = vec4(uv_position.r, uv_position.g, 0.0, 1.0);
 }

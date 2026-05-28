@@ -250,7 +250,7 @@ bool init_object() {
   if (uv_location == -1)
     std::cout << "uv location is -1 :(" << std::endl;
   
-  objectData skull = from_obj("../objects/test.obj", {0, 0, 100}, 1.0, {90, 0, 180});
+  objectData skull = LoadOBJ("../objects/test.obj", {0, 0, 100}, 1.0, {90, 0, 180});
   skull_vertex_count = skull.position.size() / 3;
   std::cout << "Loaded skull: " << skull.position.size() << " vertices" << std::endl;
   std::cout << "uv: " << skull.uv_position.size() << std::endl;
