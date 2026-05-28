@@ -59,7 +59,7 @@ objectData from_obj(const std::string& path, const Point& offset,
 
             raw_normals.push_back({ rotated.x, rotated.y, rotated.z });
         }
-        else if (token == "vn") {
+        else if (token == "vt") {
             float x, y;
             ss >> x >> y;
 
