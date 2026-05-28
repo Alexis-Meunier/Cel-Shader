@@ -12,6 +12,7 @@ struct objectData
 {
     vector<GLfloat> position;
     vector<GLfloat> normals;
+    vector<GLfloat> uv_position;
     // vector<GLfloat> colors;
 };
 

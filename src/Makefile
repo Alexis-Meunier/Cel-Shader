@@ -8,11 +8,11 @@
 
 CC = g++
 
-CPP_FILES = matrix.cpp  program.cpp point.cc object.cc
+CPP_FILES = matrix.cpp  program.cpp point.cc object.cc texture.cc
 CPP_FILES +=
-HXX_FILES = matrix.hh  program.hh point.hh object.hh object.hxx
+HXX_FILES = matrix.hh  program.hh point.hh object.hh object.hxx texture.hh
 HXX_FILES += object_data.hh
-OBJ_FILES = $(CPP_FILES:.cpp=.o)
+OBJ_FILES = $(CPP_FILES:.cc=.o)
 
 LIBS=glfw3 gl glu glut glew
 

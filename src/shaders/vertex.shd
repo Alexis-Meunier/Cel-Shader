@@ -4,6 +4,7 @@ uniform mat4 camera;
 uniform mat4 projection;
 uniform vec3 light_pos;
 uniform vec3 light_color;
+uniform sampler2D kirby_sampler;
 
 layout(location=0) in vec3 position;
 layout(location=1) in vec3 color;
@@ -20,7 +21,7 @@ void main() {
     mat4 projection_matrix = projection * camera;
     gl_Position = projection_matrix * vec4(position, 1.0);
     // out_color = color;
-    out_color = vec3(1.0, 0.0, 0.0);
+    out_color = vec3(1.0, 0.15, 0.34);
 	light_dir = normalize(light_pos - position);
 	normal = normalize(normalFlat);
     light_col = light_color;

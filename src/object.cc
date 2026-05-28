@@ -17,6 +17,7 @@ objectData from_obj(const std::string& path, const Point& offset,
     std::vector<std::array<float, 3>> raw_normals;
     std::vector<GLfloat> out_positions;
     std::vector<GLfloat> out_normals;
+    std::vector<GLfloat> uv_position;
 
     std::ifstream file(path);
     if (!file.is_open()) {
@@ -57,6 +58,13 @@ objectData from_obj(const std::string& path, const Point& offset,
             if (std::abs(rotation.z) > 1e-3) rotated.rotateZ(rotation.z * rad);
 
             raw_normals.push_back({ rotated.x, rotated.y, rotated.z });
+        }
+        else if (token == "vn") {
+            float x, y;
+            ss >> x >> y;
+
+            uv_position.push_back(x);
+            uv_position.push_back(y);
         }
         else if (token == "f") {
             std::string part;

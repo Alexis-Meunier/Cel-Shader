@@ -9,6 +9,7 @@
 #include "object.hh"
 #include "program.hh"
 #include "object_data.hh"
+#include "texture.hh"
 
 #define WINDOW_HORIZ_MID 512
 #define WINDOW_VERT_MID 512
@@ -139,7 +140,7 @@ void display() {
   glBindVertexArray(0);TEST_OPENGL_ERROR();
   glutSwapBuffers();TEST_OPENGL_ERROR();
 
-  std::cout << "Finished display" << std::endl;
+  // std::cout << "Finished display" << std::endl;
 }
 
 bool init_glut(int& argc, char *argv[])
@@ -170,6 +171,22 @@ bool init_glew()
     }
     glGetError();
     return true;
+}
+
+void init_textures()
+{
+  ImageInfo img = load_image("image.png");
+
+  // Texture
+  GLuint texture_id;
+  glGenTextures(1, &texture_id);
+
+  GLint sampler_id = glGetUniformLocation(prog->program_id, "kirby_sampler");TEST_OPENGL_ERROR();
+  glUniform1i(sampler_id, 0);
+  glActiveTexture(GL_TEXTURE0);
+
+  glBindTexture(GL_TEXTURE_2D, texture_id);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.width, img.height, 0, GL_RGB, GL_BYTE, img.pixels.data());
 }
 
 void init_GL() {
@@ -236,14 +253,15 @@ bool init_object() {
   skull_vertex_count = skull.position.size() / 3;
   std::cout << "Loaded skull: " << skull_vertex_count << " vertices" << std::endl;
 
+  // auto vertex_size = vertex_buffer_data.size() * sizeof(GLfloat);
+  // auto normal_flat_size = normal_flat_buffer_data.size() * sizeof(GLfloat);
+  // auto uv_size = uv_buffer_data.size() * sizeof(GLfloat);
+  
   auto vertex_size = skull.position.size() * sizeof(GLfloat);
   auto normal_flat_size = skull.normals.size() * sizeof(GLfloat);
-
-  // auto vertex_size = vertex_buffer_data.size() * sizeof(GLfloat);
   auto color_size = color_buffer_data.size() * sizeof(GLfloat);
-  // auto normal_flat_size = normal_flat_buffer_data.size() * sizeof(GLfloat);
   auto normal_smooth_size = normal_smooth_buffer_data.size() * sizeof(GLfloat);
-  auto uv_size = uv_buffer_data.size() * sizeof(GLfloat);
+  auto uv_size = skull.uv_position.size() * sizeof(GLfloat);
 
   glGenBuffers(1, vbo_ids);TEST_OPENGL_ERROR();
   glGenVertexArrays(1, &object_id);TEST_OPENGL_ERROR();
@@ -257,7 +275,7 @@ bool init_object() {
   // std::memcpy(vbo + vertex_size + color_size, normal_flat_buffer_data.data(), normal_flat_size);
   std::memcpy(vbo + vertex_size + color_size, skull.normals.data(), normal_flat_size);
   std::memcpy(vbo + vertex_size + color_size + normal_flat_size, normal_smooth_buffer_data.data(), normal_smooth_size);
-  std::memcpy(vbo + vertex_size + color_size + normal_flat_size + normal_smooth_size, uv_buffer_data.data(), uv_size);
+  std::memcpy(vbo + vertex_size + color_size + normal_flat_size + normal_smooth_size, skull.uv_position.data(), uv_size);
 
   glBindBuffer(GL_ARRAY_BUFFER, vbo_ids[0]);TEST_OPENGL_ERROR();
   glBufferData(GL_ARRAY_BUFFER, size, vbo, GL_STATIC_DRAW);TEST_OPENGL_ERROR();
@@ -301,7 +319,7 @@ bool init_POV() {
   glUniformMatrix4fv(camera_location, 1, GL_TRUE, camera_mat.get_values());TEST_OPENGL_ERROR();
   glUniformMatrix4fv(proj_location, 1, GL_TRUE, proj_mat.get_values());TEST_OPENGL_ERROR();
   glUniform3f(light_pos_location, 0.0, 50.0, -20.0);TEST_OPENGL_ERROR();
-  glUniform3f(light_color_location, 1.0, 1.0, 1.0);TEST_OPENGL_ERROR();
+  glUniform3f(light_color_location, 0.34, 0.15, 1.0);TEST_OPENGL_ERROR();
 
   std::cout << "camera_location: " << camera_location << std::endl;
   std::cout << "proj_location: "   << proj_location   << std::endl;
