@@ -1,0 +1,23 @@
+#version 450
+
+uniform mat4 camera;
+uniform mat4 projection;
+uniform vec3 light_pos;
+uniform vec3 light_color;
+
+layout(location=0) in vec3 position;
+layout(location=1) in vec3 color;
+layout(location=2) in vec3 normalFlat;
+layout(location=3) in vec3 normalSmooth;
+layout(location=4) in vec2 uv;
+
+float LineThickness;
+vec3 normal;
+vec3 offset;
+
+void main() {
+    LineThickness = 0.1;
+    normal = normalize(normalFlat);
+    offset = normal * LineThickness;
+    gl_Position = projection * camera * vec4(position + offset, 1.0);
+}
