@@ -20,7 +20,8 @@
     if (err != GL_NO_ERROR) std::cerr << "OpenGL ERROR!" << __LINE__ << "\n" << err << std::endl;      \
   } while(0)
 
-program *prog = nullptr;
+program *prog_edge = nullptr;
+program* prog_cel_shading = nullptr;
 GLsizei skull_vertex_count = 0;
 GLuint object_id = 0;
 
@@ -122,21 +123,41 @@ void update_camera() {
     float fx, fy, fz, rx, ry, rz;
     get_camera_dirs(fx, fy, fz, rx, ry, rz);
 
-    GLint camera_location = glGetUniformLocation(prog->program_id, "camera");
     auto camera_mat = look_at(
         camX, camY, camZ, // eye
         camX + fx, camY + fy, camZ + fz, // eye + forward
         0.0f, 1.0f, 0.0f // world up
     );
 
+    // Update Cel Shading Program
+    glUseProgram(prog_cel_shading->program_id);TEST_OPENGL_ERROR();
+    GLint camera_location = glGetUniformLocation(prog_cel_shading->program_id, "camera");
+    glUniformMatrix4fv(camera_location, 1, GL_TRUE, camera_mat.get_values());
+    
+    // Update Edge Program
+    glUseProgram(prog_edge->program_id);TEST_OPENGL_ERROR();
+    camera_location = glGetUniformLocation(prog_edge->program_id, "camera");
     glUniformMatrix4fv(camera_location, 1, GL_TRUE, camera_mat.get_values());
 }
 
 void display() {
+  // Initialization for both program 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);TEST_OPENGL_ERROR();
   update_camera();
   glBindVertexArray(object_id);TEST_OPENGL_ERROR();
+  glEnable(GL_CULL_FACE);TEST_OPENGL_ERROR();
+  
+  // First draw to show black edges of the object
+  glUseProgram(prog_edge->program_id);TEST_OPENGL_ERROR();
+  glCullFace(GL_FRONT);TEST_OPENGL_ERROR();
   glDrawArrays(GL_TRIANGLES, 0, skull_vertex_count);TEST_OPENGL_ERROR();
+
+  // Second draw to do cel shading on the object
+  glUseProgram(prog_cel_shading->program_id);TEST_OPENGL_ERROR();
+  glCullFace(GL_BACK);TEST_OPENGL_ERROR();
+  glDrawArrays(GL_TRIANGLES, 0, skull_vertex_count);TEST_OPENGL_ERROR();
+
+  // Swap for double buffering
   glBindVertexArray(0);TEST_OPENGL_ERROR();
   glutSwapBuffers();TEST_OPENGL_ERROR();
 
@@ -173,7 +194,7 @@ bool init_glew()
     return true;
 }
 
-void init_textures()
+void init_textures(program *prog)
 {
   ImageInfo img = load_image("image.jpg");
 
@@ -212,7 +233,7 @@ void init_GL() {
   std::cout << "Finished init_GL" << std::endl;
 }
 
-bool init_shaders() {
+bool init_shaders(program* prog) {
   auto program_id = prog->program_id;
   auto vertex_id = prog->vertex_id;
   auto fragment_id = prog->fragment_id;
@@ -229,9 +250,6 @@ bool init_shaders() {
 }
 
 bool init_object() {
-  if (prog == nullptr || !prog->is_ready())
-    return false;
-
   GLuint vbo_ids[1];
   // GLint vertex_location = glGetAttribLocation(prog->program_id,"position");TEST_OPENGL_ERROR();
   // GLint color_location = glGetAttribLocation(prog->program_id,"color");TEST_OPENGL_ERROR();
@@ -261,7 +279,7 @@ bool init_object() {
   if (uv_location == -1)
     std::cout << "uv location is -1 :(" << std::endl;
   
-  objectData skull = LoadOBJ("../objects/test.obj", {0, 0, 100}, 1.0, {90, 0, 180});
+  objectData skull = LoadOBJ("../objects/skull.obj", {0, 0, 100}, 1.0, {90, 0, 180});
   skull_vertex_count = skull.position.size() / 3;
   std::cout << "Loaded skull: " << skull.position.size() << " vertices" << std::endl;
   std::cout << "uv: " << skull.uv_position.size() << std::endl;
@@ -309,7 +327,7 @@ bool init_object() {
   return true;
 }
 
-bool init_POV() {
+bool init_POV(program* prog) {
 
   GLint camera_location = glGetUniformLocation(prog->program_id, "camera");TEST_OPENGL_ERROR();
   GLint proj_location = glGetUniformLocation(prog->program_id, "projection");TEST_OPENGL_ERROR();
@@ -348,14 +366,30 @@ int main(int argc, char *argv[]) {
   init_GL();
 
   std::cout << "making programs" << std::endl;
-  prog = program::make_program("shaders/vertex.shd", "shaders/fragment.shd");
-  if (prog == nullptr || !prog->is_ready())
-    return 1;
-  std::cout << "make programs" << std::endl;
 
-  init_shaders();
+  // Create first program with the edge shaders
+  prog_edge = program::make_program("shaders/vertex_edge.shd", "shaders/fragment_edge.shd");
+  if (prog_edge == nullptr || !prog_edge->is_ready())
+    return 1;
+
+  // Create second program with the cel shading shaders
+  prog_cel_shading = program::make_program("shaders/vertex_cel_shading.shd", "shaders/fragment_cel_shading.shd");
+  if (prog_cel_shading == nullptr || !prog_cel_shading->is_ready())
+    return 1;
+
+  std::cout << "make programs" << std::endl;
+  
+  // Initialization for the edge program
+  init_shaders(prog_edge);
+  init_POV(prog_edge);
+
+  // Initialization for both program (exact same data)
   init_object();
-  init_textures();
-  init_POV();
+  
+  // Initialization for the cel shading program
+  init_shaders(prog_cel_shading);
+  init_POV(prog_cel_shading);
+  init_textures(prog_cel_shading);
+
   glutMainLoop();
 }

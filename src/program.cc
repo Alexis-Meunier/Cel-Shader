@@ -53,7 +53,7 @@ void program::set_ready()
 
 program *program::make_program(const std::string& vertex_shader_src, const std::string& fragment_shader_src)
 {
-    static program *prog = new program();
+    program *prog = new program();
 
     // Compile VERTEX shader
     GLint vertex_compile_status = GL_TRUE;
