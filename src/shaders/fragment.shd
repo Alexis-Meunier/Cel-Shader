@@ -57,5 +57,5 @@ void main() {
     float diffuse = max(0.0, dot(normal, light_dir));
     float levels = mix(2.0, 4.0, D);
     float toonLight = floor(diffuse * levels) / (levels - 1.0);
-    output_color = vec4(out_color * toonLight, 1.0);
+    output_color = vec4(light_color * out_color * toonLight, 1.0);
 }
