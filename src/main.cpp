@@ -309,28 +309,47 @@ bool init_POV(program* prog) {
 
   GLint camera_location = glGetUniformLocation(prog->program_id, "camera");TEST_OPENGL_ERROR();
   GLint proj_location = glGetUniformLocation(prog->program_id, "projection");TEST_OPENGL_ERROR();
+  GLint light_pos_location = glGetUniformLocation(prog->program_id, "light_pos");TEST_OPENGL_ERROR();
+  GLint light_color_location = glGetUniformLocation(prog->program_id, "light_color");TEST_OPENGL_ERROR();
 
-  glUniformMatrix4fv(camera_location, 1, GL_TRUE, camera_mat.get_values());TEST_OPENGL_ERROR(); // Camera matrix
-  glUniformMatrix4fv(proj_location, 1, GL_TRUE, proj_mat.get_values());TEST_OPENGL_ERROR(); // Projection matrix
+  // auto camera_mat = look_at(20, 20, 20,
+            //  0, 0, 0,
+            //  0, 1, 0
+            //  );
+  // auto proj_mat = frustum(-1, 1, -1, 1,
+        //   //  5, 50000
+        //  );
+  // auto camera_mat = look_at(0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, 3.0, 0.0);
+  // auto proj_mat = frustum(-1.0, 1.0, -1.0, 1.0, 3.0, 30000.0);
+  auto camera_mat = look_at(0.0, 0.0, -50.0,   // eye
+                           0.0, 0.0,  100.0,  // look at skull
+                           0.0, 1.0,  0.0);   // up
+  auto proj_mat = frustum(-1.0, 1.0, -1.0, 1.0, 1.0, 500.0);
+  glUniformMatrix4fv(camera_location, 1, GL_TRUE, camera_mat.get_values());TEST_OPENGL_ERROR();
+  glUniformMatrix4fv(proj_location, 1, GL_TRUE, proj_mat.get_values());TEST_OPENGL_ERROR();
+  glUniform3f(light_pos_location, 0.0, 50.0, -20.0);TEST_OPENGL_ERROR();
+  glUniform3f(light_color_location, 0.34, 0.15, 1.0);TEST_OPENGL_ERROR();
 
+  std::cout << "camera_location: " << camera_location << std::endl;
+  std::cout << "proj_location: "   << proj_location   << std::endl;
   std::cout << "Finished init_POV" << std::endl;
   return true;
 }
 
-void init_uniforms()
-{
-  GLint light_pos_location = glGetUniformLocation(prog->program_id, "light_pos");TEST_OPENGL_ERROR();
-  GLint light_color_location = glGetUniformLocation(prog->program_id, "light_color");TEST_OPENGL_ERROR();
-  // GLint nbImageColors_location = glGetUniformLocation(prog->program_id, "nbImageColors");TEST_OPENGL_ERROR();
-  // GLint nbLightColors_location = glGetUniformLocation(prog->program_id, "nbLightColors");TEST_OPENGL_ERROR();
+// void init_uniforms()
+// {
+//   GLint light_pos_location = glGetUniformLocation(prog->program_id, "light_pos");TEST_OPENGL_ERROR();
+//   GLint light_color_location = glGetUniformLocation(prog->program_id, "light_color");TEST_OPENGL_ERROR();
+//   // GLint nbImageColors_location = glGetUniformLocation(prog->program_id, "nbImageColors");TEST_OPENGL_ERROR();
+//   // GLint nbLightColors_location = glGetUniformLocation(prog->program_id, "nbLightColors");TEST_OPENGL_ERROR();
 
-  glUniform3f(light_pos_location, -50.0, 50.0, 100.0);TEST_OPENGL_ERROR(); // The position of the light
-  glUniform3f(light_color_location, 1, 1, 1);TEST_OPENGL_ERROR(); // The color of the light
-  // glUniform1f(nbImageColors_location, 6.0); TEST_OPENGL_ERROR(); // The number of colors for the image of our cel-shading
-  // glUniform1f(nbLightColors_location, 8.0); TEST_OPENGL_ERROR(); // The number of colors for the light of our cel-shading
+//   glUniform3f(light_pos_location, -50.0, 50.0, 100.0);TEST_OPENGL_ERROR(); // The position of the light
+//   glUniform3f(light_color_location, 1, 1, 1);TEST_OPENGL_ERROR(); // The color of the light
+//   // glUniform1f(nbImageColors_location, 6.0); TEST_OPENGL_ERROR(); // The number of colors for the image of our cel-shading
+//   // glUniform1f(nbLightColors_location, 8.0); TEST_OPENGL_ERROR(); // The number of colors for the light of our cel-shading
 
-  std::cout << "Finished init_uniforms" << std::endl;
-}
+//   std::cout << "Finished init_uniforms" << std::endl;
+// }
 
 int main(int argc, char *argv[]) {
   init_glut(argc, argv);
