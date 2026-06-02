@@ -3,26 +3,25 @@
 in vec3 light_dir;
 in vec3 normal;
 in vec2 uv_position;
+in float viewDistance;
 
 uniform sampler2D kirby_sampler;
 
 layout(location=0) out vec4 output_color;
 
-float intensity;
-float factor;
-
 void main() {
- 
-    intensity = dot(normalize(normal), normalize(light_dir));
+    float d = max(0.0, dot(light_dir, normal));
 
-    if (intensity > 0.95)
-        factor = 1.0;
-	else if (intensity > 0.5)
-		factor = 0.7;
-	else if (intensity > 0.25)
-		factor = 0.35;
-	else
-		factor = 0.1;
-    
-    output_color = vec4(texture(kirby_sampler, uv_position)) * factor;
+    // Compute D --> Details based on distance
+    float D = 1.0 - clamp(viewDistance / 120.0, 0.0, 1.0);
+    D = pow(D, 0.5);
+    D = clamp(D, 0.0, 1.0);
+
+	vec4 color = texture(kirby_sampler, uv_position);
+
+    float diffuse = max(0.0, dot(normal, light_dir));
+    float levels = mix(2.0, 4.0, D);
+    float toonLight = min(1.0, floor(diffuse * levels) / (levels - 1.0));
+
+    output_color = vec4(color.rgb * toonLight, color.a);
 }

@@ -328,7 +328,7 @@ bool init_POV(program* prog) {
   glUniformMatrix4fv(camera_location, 1, GL_TRUE, camera_mat.get_values());TEST_OPENGL_ERROR();
   glUniformMatrix4fv(proj_location, 1, GL_TRUE, proj_mat.get_values());TEST_OPENGL_ERROR();
   glUniform3f(light_pos_location, 0.0, 50.0, -20.0);TEST_OPENGL_ERROR();
-  glUniform3f(light_color_location, 0.34, 0.15, 1.0);TEST_OPENGL_ERROR();
+  glUniform3f(light_color_location, 1, 1, 1);TEST_OPENGL_ERROR();
 
   std::cout << "camera_location: " << camera_location << std::endl;
   std::cout << "proj_location: "   << proj_location   << std::endl;
