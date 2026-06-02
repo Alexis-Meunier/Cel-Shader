@@ -160,8 +160,6 @@ void display() {
   // Swap for double buffering
   glBindVertexArray(0);TEST_OPENGL_ERROR();
   glutSwapBuffers();TEST_OPENGL_ERROR();
-
-  // std::cout << "Finished display" << std::endl;
 }
 
 bool init_glut(int& argc, char *argv[])
@@ -198,11 +196,9 @@ void init_textures(program *prog)
 {
   ImageInfo img = load_image("image.jpg");
 
-  // Texture
   GLuint texture_id;
   glGenTextures(1, &texture_id);TEST_OPENGL_ERROR();
 
-  // GLint sampler_id = 12;
   GLint sampler_id = glGetUniformLocation(prog->program_id, "kirby_sampler");TEST_OPENGL_ERROR();
   if (sampler_id == -1)
     std::cout << "Sampler error" << std::endl;
@@ -225,7 +221,7 @@ void init_textures(program *prog)
 void init_GL() {
   glEnable(GL_DEPTH_TEST);TEST_OPENGL_ERROR();
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);TEST_OPENGL_ERROR();
-  // glEnable(GL_CULL_FACE);TEST_OPENGL_ERROR();
+  glEnable(GL_CULL_FACE);TEST_OPENGL_ERROR();
   glClearColor(1.0, 0.0, 1.0, 1.0);TEST_OPENGL_ERROR();
   glPixelStorei(GL_UNPACK_ALIGNMENT,1);
   glPixelStorei(GL_PACK_ALIGNMENT,1);
@@ -251,62 +247,46 @@ bool init_shaders(program* prog) {
 
 bool init_object() {
   GLuint vbo_ids[1];
+
+  // Cleaner way of doing it but for some reason it fails for some variables ???
   // GLint vertex_location = glGetAttribLocation(prog->program_id,"position");TEST_OPENGL_ERROR();
-  // GLint color_location = glGetAttribLocation(prog->program_id,"color");TEST_OPENGL_ERROR();
-  // GLint normal_flat_location = 10;
-  // glBindAttribLocation(prog->program_id, normal_flat_location, "normalFlat");TEST_OPENGL_ERROR();
-  // GLint normal_smooth_location = 11;
-  // glBindAttribLocation(prog->program_id, normal_smooth_location, "normalSmooth");TEST_OPENGL_ERROR();
-  // GLint uv_location = 12;
-  // glBindAttribLocation(prog->program_id, uv_location, "uv");TEST_OPENGL_ERROR();
-  // GLint normal_flat_location = glGetAttribLocation(prog->program_id,"normalFlat");TEST_OPENGL_ERROR();
-  // GLint normal_smooth_location = glGetAttribLocation(prog->program_id,"normalSmooth");TEST_OPENGL_ERROR();
-  // GLint uv_location = glGetAttribLocation(prog->program_id,"uv");TEST_OPENGL_ERROR();
+
   GLint vertex_location = 0;
   GLint color_location = 1;
   GLint normal_flat_location = 2;
-  GLint normal_smooth_location = 3;
-  GLint uv_location = 4;
+  GLint uv_location = 3;
 
-  if (vertex_location == -1)
-    std::cout << "Vertex location is -1 :(" << std::endl;
-  if (color_location == -1)
-    std::cout << "Color location is -1 :(" << std::endl;
-  if (normal_flat_location == -1)
-    std::cout << "Normal flat location is -1 :(" << std::endl;
-  if (normal_smooth_location == -1)
-    std::cout << "Normal Smooth location is -1 :(" << std::endl;
-  if (uv_location == -1)
-    std::cout << "uv location is -1 :(" << std::endl;
+  // if (vertex_location == -1)
+  //   std::cout << "Vertex location is -1 :(" << std::endl;
+  // if (color_location == -1)
+  //   std::cout << "Color location is -1 :(" << std::endl;
+  // if (normal_flat_location == -1)
+  //   std::cout << "Normal flat location is -1 :(" << std::endl;
+  // if (uv_location == -1)
+  //   std::cout << "uv location is -1 :(" << std::endl;
   
   objectData skull = LoadOBJ("../objects/skull.obj", {0, 0, 100}, 1.0, {90, 0, 180});
   skull_vertex_count = skull.position.size() / 3;
-  std::cout << "Loaded skull: " << skull.position.size() << " vertices" << std::endl;
-  std::cout << "uv: " << skull.uv_position.size() << std::endl;
 
-  // auto vertex_size = vertex_buffer_data.size() * sizeof(GLfloat);
-  // auto normal_flat_size = normal_flat_buffer_data.size() * sizeof(GLfloat);
-  // auto uv_size = uv_buffer_data.size() * sizeof(GLfloat);
-  
-  auto vertex_size = skull.position.size() * sizeof(GLfloat);
-  auto normal_flat_size = skull.normals.size() * sizeof(GLfloat);
+  std::vector<GLfloat> vertex_buffer_data = skull.position;
+  std::vector<GLfloat> normal_flat_buffer_data = skull.normals;
+  std::vector<GLfloat> uv_buffer_data = skull.uv_position;
+
+  auto vertex_size = vertex_buffer_data.size() * sizeof(GLfloat);
   auto color_size = color_buffer_data.size() * sizeof(GLfloat);
-  auto normal_smooth_size = normal_smooth_buffer_data.size() * sizeof(GLfloat);
-  auto uv_size = skull.uv_position.size() * sizeof(GLfloat);
+  auto normal_flat_size = normal_flat_buffer_data.size() * sizeof(GLfloat);
+  auto uv_size = uv_buffer_data.size() * sizeof(GLfloat);
 
   glGenBuffers(1, vbo_ids);TEST_OPENGL_ERROR();
   glGenVertexArrays(1, &object_id);TEST_OPENGL_ERROR();
   glBindVertexArray(object_id);TEST_OPENGL_ERROR();
 
-  auto size = vertex_size + color_size + uv_size + normal_smooth_size + normal_flat_size;
+  auto size = vertex_size + color_size + normal_flat_size + uv_size;
   char *vbo = new char[size];
-  std::memcpy(vbo, skull.position.data(), vertex_size);
-  // std::memcpy(vbo, vertex_buffer_data.data(), vertex_size);
+  std::memcpy(vbo, vertex_buffer_data.data(), vertex_size);
   std::memcpy(vbo + vertex_size, color_buffer_data.data(), color_size);
-  // std::memcpy(vbo + vertex_size + color_size, normal_flat_buffer_data.data(), normal_flat_size);
-  std::memcpy(vbo + vertex_size + color_size, skull.normals.data(), normal_flat_size);
-  std::memcpy(vbo + vertex_size + color_size + normal_flat_size, normal_smooth_buffer_data.data(), normal_smooth_size);
-  std::memcpy(vbo + vertex_size + color_size + normal_flat_size + normal_smooth_size, skull.uv_position.data(), uv_size);
+  std::memcpy(vbo + vertex_size + color_size, normal_flat_buffer_data.data(), normal_flat_size);
+  std::memcpy(vbo + vertex_size + color_size + normal_flat_size, skull.uv_position.data(), uv_size);
 
   glBindBuffer(GL_ARRAY_BUFFER, vbo_ids[0]);TEST_OPENGL_ERROR();
   glBufferData(GL_ARRAY_BUFFER, size, vbo, GL_STATIC_DRAW);TEST_OPENGL_ERROR();
@@ -314,13 +294,11 @@ bool init_object() {
   glVertexAttribPointer(vertex_location, 3, GL_FLOAT, GL_FALSE, 0, 0);TEST_OPENGL_ERROR();
   glVertexAttribPointer(color_location, 3, GL_FLOAT, GL_FALSE, 0, (void *)(vertex_size));TEST_OPENGL_ERROR();
   glVertexAttribPointer(normal_flat_location, 3, GL_FLOAT, GL_FALSE, 0, (void *)(vertex_size + color_size));TEST_OPENGL_ERROR();
-  glVertexAttribPointer(normal_smooth_location, 3, GL_FLOAT, GL_FALSE, 0, (void *)(vertex_size + color_size + normal_flat_size));TEST_OPENGL_ERROR();
-  glVertexAttribPointer(uv_location, 2, GL_FLOAT, GL_FALSE, 0, (void *)(vertex_size + color_size + normal_flat_size + normal_smooth_size));TEST_OPENGL_ERROR();
+  glVertexAttribPointer(uv_location, 2, GL_FLOAT, GL_FALSE, 0, (void *)(vertex_size + color_size + normal_flat_size));TEST_OPENGL_ERROR();
 
   glEnableVertexAttribArray(vertex_location);TEST_OPENGL_ERROR();
   glEnableVertexAttribArray(color_location);TEST_OPENGL_ERROR();
   glEnableVertexAttribArray(normal_flat_location);TEST_OPENGL_ERROR();
-  glEnableVertexAttribArray(normal_smooth_location);TEST_OPENGL_ERROR();
   glEnableVertexAttribArray(uv_location);TEST_OPENGL_ERROR();
 
   std::cout << "Finished init_object" << std::endl;
@@ -331,35 +309,30 @@ bool init_POV(program* prog) {
 
   GLint camera_location = glGetUniformLocation(prog->program_id, "camera");TEST_OPENGL_ERROR();
   GLint proj_location = glGetUniformLocation(prog->program_id, "projection");TEST_OPENGL_ERROR();
-  GLint light_pos_location = glGetUniformLocation(prog->program_id, "light_pos");TEST_OPENGL_ERROR();
-  GLint light_color_location = glGetUniformLocation(prog->program_id, "light_color");TEST_OPENGL_ERROR();
 
-  // auto camera_mat = look_at(20, 20, 20,
-  	      //  0, 0, 0,
-  	      //  0, 1, 0
-  	      //  );
-  // auto proj_mat = frustum(-1, 1, -1, 1,
-	    //   //  5, 50000
-	    //  );
-  // auto camera_mat = look_at(0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, 3.0, 0.0);
-  // auto proj_mat = frustum(-1.0, 1.0, -1.0, 1.0, 3.0, 30000.0);
-  auto camera_mat = look_at(0.0, 0.0, -50.0,   // eye
-                           0.0, 0.0,  100.0,  // look at skull
-                           0.0, 1.0,  0.0);   // up
-  auto proj_mat = frustum(-1.0, 1.0, -1.0, 1.0, 1.0, 500.0);
-  glUniformMatrix4fv(camera_location, 1, GL_TRUE, camera_mat.get_values());TEST_OPENGL_ERROR();
-  glUniformMatrix4fv(proj_location, 1, GL_TRUE, proj_mat.get_values());TEST_OPENGL_ERROR();
-  glUniform3f(light_pos_location, 0.0, 50.0, -20.0);TEST_OPENGL_ERROR();
-  glUniform3f(light_color_location, 0.34, 0.15, 1.0);TEST_OPENGL_ERROR();
+  glUniformMatrix4fv(camera_location, 1, GL_TRUE, camera_mat.get_values());TEST_OPENGL_ERROR(); // Camera matrix
+  glUniformMatrix4fv(proj_location, 1, GL_TRUE, proj_mat.get_values());TEST_OPENGL_ERROR(); // Projection matrix
 
-  std::cout << "camera_location: " << camera_location << std::endl;
-  std::cout << "proj_location: "   << proj_location   << std::endl;
   std::cout << "Finished init_POV" << std::endl;
   return true;
 }
 
+void init_uniforms()
+{
+  GLint light_pos_location = glGetUniformLocation(prog->program_id, "light_pos");TEST_OPENGL_ERROR();
+  GLint light_color_location = glGetUniformLocation(prog->program_id, "light_color");TEST_OPENGL_ERROR();
+  // GLint nbImageColors_location = glGetUniformLocation(prog->program_id, "nbImageColors");TEST_OPENGL_ERROR();
+  // GLint nbLightColors_location = glGetUniformLocation(prog->program_id, "nbLightColors");TEST_OPENGL_ERROR();
+
+  glUniform3f(light_pos_location, -50.0, 50.0, 100.0);TEST_OPENGL_ERROR(); // The position of the light
+  glUniform3f(light_color_location, 1, 1, 1);TEST_OPENGL_ERROR(); // The color of the light
+  // glUniform1f(nbImageColors_location, 6.0); TEST_OPENGL_ERROR(); // The number of colors for the image of our cel-shading
+  // glUniform1f(nbLightColors_location, 8.0); TEST_OPENGL_ERROR(); // The number of colors for the light of our cel-shading
+
+  std::cout << "Finished init_uniforms" << std::endl;
+}
+
 int main(int argc, char *argv[]) {
-  //  tmp();
   init_glut(argc, argv);
   if (!init_glew())
     std::exit(-1);

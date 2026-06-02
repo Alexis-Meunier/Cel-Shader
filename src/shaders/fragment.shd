@@ -1,0 +1,61 @@
+#version 450
+
+in vec3 out_color;
+in vec3 light_dir;
+in vec3 normal;
+in vec2 uv_position;
+in float viewDistance;
+
+uniform sampler2D kirby_sampler;
+uniform vec3 light_color;
+
+layout(location=0) out vec4 output_color;
+
+void main() {
+    vec3 N = normalize(normal);
+
+    N = round(N * 4.0) / 4.0;
+    N = normalize(N);
+
+    float d = max(0.0, dot(light_dir, N));
+
+    // Compute D --> Details based on distance
+// Using sqrt without log for more unifrom change
+    float D = 1.0 - clamp(viewDistance / 120.0, 0.0, 1.0);
+    D = pow(D, 0.5);
+// Using logarithm for increased change
+    // float D = 1.0 - log(viewDistance) / log(500.0);
+    
+    D = clamp(D, 0.0, 1.0);
+
+// Make the transition smooth
+    // float exactLevels = mix(2.0, 4.0, D);
+
+    // float low = floor(exactLevels);
+    // float high = ceil(exactLevels);
+
+    // float qLow =
+    //     floor(d * (low - 1.0))
+    //     / (low - 1.0);
+
+    // float qHigh =
+    //     floor(d * (high - 1.0))
+    //     / (high - 1.0);
+
+    // float t = fract(exactLevels);
+
+    // float quantized = mix(qLow, qHigh, t);
+
+// Make the transition more "saccade"
+    // float diffuseLight = max(0.0, dot(light_dir, normal));
+    // float levels = round(mix(2.0, 4.0, D));
+    // float quantized = floor(diffuseLight * (levels - 1.0)) / (levels - 1.0);
+
+    // Display the color
+    // output_color = vec4(out_color * quantized, 1.0);
+
+    float diffuse = max(0.0, dot(normal, light_dir));
+    float levels = mix(2.0, 4.0, D);
+    float toonLight = floor(diffuse * levels) / (levels - 1.0);
+    output_color = vec4(out_color * toonLight, 1.0);
+}

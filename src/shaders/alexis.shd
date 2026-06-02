@@ -1,0 +1,40 @@
+#version 450
+
+uniform mat4 camera;
+uniform mat4 projection;
+uniform vec3 light_pos;
+uniform vec3 light_color;
+
+layout(location=0) in vec3 position;
+layout(location=1) in vec3 color;
+layout(location=2) in vec3 normalFlat;
+layout(location=3) in vec2 uv;
+
+out vec3 out_color;
+out vec3 light_dir;
+out vec3 normal;
+out vec2 uv_position;
+out float viewDistance;
+
+void main()
+{
+    // Set the position of the vertices
+    mat4 projection_matrix = projection * camera;
+    gl_Position = projection_matrix * vec4(position, 1.0);
+
+    // Set the color of the triangles
+    // out_color = color;
+    out_color = vec3(1.0, 0.0, 0.0);
+
+    // Set the direction of the light
+    light_dir = normalize(light_pos - position);
+
+    // Set the normals
+	normal = normalize(normalFlat);
+
+    // Set the uv position for imageTextures
+    uv_position = uv;
+
+    vec4 viewPos = camera * vec4(position, 1.0);
+    viewDistance = -viewPos.z;
+}
