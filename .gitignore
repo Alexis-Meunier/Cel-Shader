@@ -71,3 +71,4 @@ Testing/
 .envrc
 main
 *.direnv
+objects/

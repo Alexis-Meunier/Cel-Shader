@@ -4,9 +4,10 @@ in vec3 light_dir;
 in vec3 normal;
 in vec2 uv_position;
 in float viewDistance;
+flat in int mat_id;
 
-uniform sampler2D kirby_sampler;
 uniform bool smoothed;
+uniform sampler2D textures[10];
 
 layout(location=0) out vec4 output_color;
 
@@ -24,7 +25,7 @@ void main() {
     D = pow(D, 0.5);
     D = clamp(D, 0.0, 1.0);
 
-	vec4 color = texture(kirby_sampler, uv_position);
+	vec4 color = texture(textures[mat_id], uv_position);
 
     float diffuse = max(0.0, dot(normal, light_dir));
     float levels = mix(2.0, 4.0, D);

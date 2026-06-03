@@ -170,7 +170,7 @@ objectData LoadOBJ(const std::string& path, const Point& offset,
                 std::cout << v << std::endl;
             if (w > 1)
                 std::cout << w << std::endl;
-            raw_uvs.push_back({u, v});
+            raw_uvs.push_back({u, 1 - v});
         }
 
         // normal

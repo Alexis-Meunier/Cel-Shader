@@ -1,15 +1,18 @@
 #include <GL/glew.h>
 #include <GL/freeglut.h>
+#include <cstddef>
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <cstring>
+#include <string>
 
 #include "matrix.hh"
 #include "object.hh"
 #include "program.hh"
 #include "object_data.hh"
 #include "texture.hh"
+#include "tiny_obj_loader.hh"
 
 #define WINDOW_HORIZ_MID 512
 #define WINDOW_VERT_MID 512
@@ -26,6 +29,15 @@ GLsizei skull_vertex_count = 0;
 GLuint object_id = 0;
 
 bool is_smoothed = GL_FALSE;
+
+const std::string obj_dir = "../objects/Woman3/source/";
+
+/*
+"../objects/Other/source/Meshy_AI_Elven_Warrior_in_Gree_0512141219_texture_obj/"
+../objects/Woman/source/
+../objects/Batman/2567_open3dmodel/Batman/
+../objects/Woman2/source/
+*/
 
 bool locked = true;
 
@@ -218,30 +230,37 @@ bool init_glew()
     return true;
 }
 
-void init_textures(program *prog)
+void init_textures(program *prog, const std::vector<tinyobj::material_t>& materials)
 {
-  ImageInfo img = load_image("image.jpg");
+  for (size_t i = 0; i < materials.size(); i++) {
+    if (materials[i].diffuse_texname.empty()) continue;
+    std::string tex_path = obj_dir + materials[i].diffuse_texname;
 
-  GLuint texture_id;
-  glGenTextures(1, &texture_id);TEST_OPENGL_ERROR();
+    ImageInfo img = load_image(tex_path.c_str());
 
-  GLint sampler_id = glGetUniformLocation(prog->program_id, "kirby_sampler");TEST_OPENGL_ERROR();
-  if (sampler_id == -1)
-    std::cout << "Sampler error" << std::endl;
-  glUniform1i(sampler_id, 0);TEST_OPENGL_ERROR();
-  glActiveTexture(GL_TEXTURE0);TEST_OPENGL_ERROR();
+    GLuint texture_id;
+    glGenTextures(1, &texture_id);TEST_OPENGL_ERROR();
 
-  std::cout << "size: " << img.width << "x" << img.height << std::endl;
+    std::cout << "size: " << img.width << "x" << img.height << std::endl;
 
-  glBindTexture(GL_TEXTURE_2D, texture_id);TEST_OPENGL_ERROR();
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.width, img.height, 0, GL_RGB,  GL_UNSIGNED_BYTE, img.pixels.data());TEST_OPENGL_ERROR();
+    std::string name = "textures[" + std::to_string(i) + "]";
+    GLint loc = glGetUniformLocation(prog->program_id, name.c_str());
 
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);TEST_OPENGL_ERROR();
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);TEST_OPENGL_ERROR();
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);TEST_OPENGL_ERROR();
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);TEST_OPENGL_ERROR();
+    GLint sampler_id = glGetUniformLocation(prog->program_id, name.c_str());TEST_OPENGL_ERROR();
+    if (sampler_id == -1)
+      std::cout << "Sampler error" << std::endl;
+    glUniform1i(sampler_id, i);TEST_OPENGL_ERROR();
+    glActiveTexture(GL_TEXTURE0 + i);TEST_OPENGL_ERROR();
 
-  std::cout << "pixels: " << img.pixels.size() << std::endl;
+
+    glBindTexture(GL_TEXTURE_2D, texture_id);TEST_OPENGL_ERROR();
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.width, img.height, 0, GL_RGB,  GL_UNSIGNED_BYTE, img.pixels.data());TEST_OPENGL_ERROR();
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);TEST_OPENGL_ERROR();
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);TEST_OPENGL_ERROR();
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);TEST_OPENGL_ERROR();
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);TEST_OPENGL_ERROR();
+  }
 }
 
 void init_GL() {
@@ -271,7 +290,7 @@ bool init_shaders(program* prog) {
   return true;
 }
 
-bool init_object() {
+bool init_object(std::vector<tinyobj::material_t>& materials) {
   GLuint vbo_ids[1];
 
   // Cleaner way of doing it but for some reason it fails for some variables ???
@@ -281,6 +300,7 @@ bool init_object() {
   GLint color_location = 1;
   GLint normal_flat_location = 2;
   GLint uv_location = 3;
+  GLint material_ids_location = 4;
 
   // if (vertex_location == -1)
   //   std::cout << "Vertex location is -1 :(" << std::endl;
@@ -290,29 +310,91 @@ bool init_object() {
   //   std::cout << "Normal flat location is -1 :(" << std::endl;
   // if (uv_location == -1)
   //   std::cout << "uv location is -1 :(" << std::endl;
-  
-  objectData skull = LoadOBJ("../objects/skull.obj", {0, 0, 100}, 1.0, {90, 0, 180});
-  skull_vertex_count = skull.position.size() / 3;
+  tinyobj::attrib_t attributes;
+  std::vector<tinyobj::shape_t> shapes;
+  std::string warnings;
+  std::string errors;
+  tinyobj::LoadObj(&attributes, &shapes, &materials, &warnings, &errors, (obj_dir + "mon_raviel.obj").c_str(), obj_dir.c_str());
 
-  std::vector<GLfloat> vertex_buffer_data = skull.position;
-  std::vector<GLfloat> normal_flat_buffer_data = skull.normals;
-  std::vector<GLfloat> uv_buffer_data = skull.uv_position;
+  std::vector<GLfloat> positions;
+  std::vector<GLfloat> normals;
+  std::vector<GLfloat> uv_positions;
+  std::vector<GLuint> material_ids;
+
+
+  for (int i = 0; i < shapes.size(); i ++) {
+    tinyobj::shape_t &shape = shapes[i];
+    tinyobj::mesh_t &mesh = shape.mesh;
+
+    for (int j = 0; j < mesh.material_ids.size(); j++) {
+      material_ids.push_back(mesh.material_ids[j]);
+      material_ids.push_back(mesh.material_ids[j]);
+      material_ids.push_back(mesh.material_ids[j]);
+    }
+
+    for (int j = 0; j < mesh.indices.size(); j++) {
+        tinyobj::index_t i = mesh.indices[j];
+
+        auto x = attributes.vertices[i.vertex_index * 3];
+        auto y = attributes.vertices[i.vertex_index * 3 + 1];
+        auto z = attributes.vertices[i.vertex_index * 3 + 2];
+
+        auto x_normal = attributes.normals[i.normal_index * 3];
+        auto y_normal = attributes.normals[i.normal_index * 3 + 1];
+        auto z_normal = attributes.normals[i.normal_index * 3 + 2];
+
+        auto scale = 0.5;
+        auto rad = M_PI / 180.0;
+        auto rotation = Point{0,180,0};
+
+        auto rotated = Point(x * scale, y * scale, z * scale);
+        if (std::abs(rotation.x) > 1e-3) rotated.rotateX(rotation.x * rad);
+        if (std::abs(rotation.y) > 1e-3) rotated.rotateY(rotation.y * rad);
+        if (std::abs(rotation.z) > 1e-3) rotated.rotateZ(rotation.z * rad);
+
+        auto rotated_normal = Point(x_normal, y_normal, z_normal);
+        if (std::abs(rotation.x) > 1e-3) rotated_normal.rotateX(rotation.x * rad);
+        if (std::abs(rotation.y) > 1e-3) rotated_normal.rotateY(rotation.y * rad);
+        if (std::abs(rotation.z) > 1e-3) rotated_normal.rotateZ(rotation.z * rad);
+        
+        positions.push_back(rotated.x);
+        positions.push_back(rotated.y);
+        positions.push_back(rotated.z);
+
+        normals.push_back(rotated_normal.x);
+        normals.push_back(rotated_normal.y);
+        normals.push_back(rotated_normal.z);
+
+        uv_positions.push_back(attributes.texcoords[i.texcoord_index * 2]);
+        uv_positions.push_back(1 - attributes.texcoords[i.texcoord_index * 2 + 1]);
+    }
+  }
+  
+  //objectData skull = LoadOBJ("../objects/Other/source/Meshy_AI_Elven_Warrior_in_Gree_0512141219_texture_obj/Meshy_AI_Elven_Warrior_in_Gree_0512141219_texture.obj", {0, 0, 0}, 5.0, {0, 180, 0});
+  skull_vertex_count = positions.size() / 3;
+
+  std::vector<GLfloat> vertex_buffer_data = positions;
+  std::vector<GLfloat> normal_flat_buffer_data = normals;
+  std::vector<GLfloat> uv_buffer_data = uv_positions;
 
   auto vertex_size = vertex_buffer_data.size() * sizeof(GLfloat);
   auto color_size = color_buffer_data.size() * sizeof(GLfloat);
   auto normal_flat_size = normal_flat_buffer_data.size() * sizeof(GLfloat);
   auto uv_size = uv_buffer_data.size() * sizeof(GLfloat);
+  auto material_ids_size = material_ids.size() * sizeof(GLuint);
 
   glGenBuffers(1, vbo_ids);TEST_OPENGL_ERROR();
   glGenVertexArrays(1, &object_id);TEST_OPENGL_ERROR();
   glBindVertexArray(object_id);TEST_OPENGL_ERROR();
 
-  auto size = vertex_size + color_size + normal_flat_size + uv_size;
+  auto size = vertex_size + color_size + normal_flat_size + uv_size + material_ids_size;
   char *vbo = new char[size];
   std::memcpy(vbo, vertex_buffer_data.data(), vertex_size);
   std::memcpy(vbo + vertex_size, color_buffer_data.data(), color_size);
   std::memcpy(vbo + vertex_size + color_size, normal_flat_buffer_data.data(), normal_flat_size);
-  std::memcpy(vbo + vertex_size + color_size + normal_flat_size, skull.uv_position.data(), uv_size);
+  std::memcpy(vbo + vertex_size + color_size + normal_flat_size, uv_positions.data(), uv_size);
+  std::memcpy(vbo + vertex_size + color_size + normal_flat_size + uv_size, material_ids.data(), material_ids_size);
+
 
   glBindBuffer(GL_ARRAY_BUFFER, vbo_ids[0]);TEST_OPENGL_ERROR();
   glBufferData(GL_ARRAY_BUFFER, size, vbo, GL_STATIC_DRAW);TEST_OPENGL_ERROR();
@@ -321,11 +403,13 @@ bool init_object() {
   glVertexAttribPointer(color_location, 3, GL_FLOAT, GL_FALSE, 0, (void *)(vertex_size));TEST_OPENGL_ERROR();
   glVertexAttribPointer(normal_flat_location, 3, GL_FLOAT, GL_FALSE, 0, (void *)(vertex_size + color_size));TEST_OPENGL_ERROR();
   glVertexAttribPointer(uv_location, 2, GL_FLOAT, GL_FALSE, 0, (void *)(vertex_size + color_size + normal_flat_size));TEST_OPENGL_ERROR();
+  glVertexAttribIPointer(material_ids_location, 1, GL_INT, GL_FALSE, (void*)(vertex_size + color_size + normal_flat_size + uv_size));TEST_OPENGL_ERROR();
 
   glEnableVertexAttribArray(vertex_location);TEST_OPENGL_ERROR();
   glEnableVertexAttribArray(color_location);TEST_OPENGL_ERROR();
   glEnableVertexAttribArray(normal_flat_location);TEST_OPENGL_ERROR();
   glEnableVertexAttribArray(uv_location);TEST_OPENGL_ERROR();
+  glEnableVertexAttribArray(material_ids_location);TEST_OPENGL_ERROR();
 
   std::cout << "Finished init_object" << std::endl;
   return true;
@@ -402,12 +486,13 @@ int main(int argc, char *argv[]) {
   init_POV(prog_edge);
 
   // Initialization for both program (exact same data)
-  init_object();
+  std::vector<tinyobj::material_t> materials;
+  init_object(materials);
   
   // Initialization for the cel shading program
   init_shaders(prog_cel_shading);
   init_POV(prog_cel_shading);
-  init_textures(prog_cel_shading);
+  init_textures(prog_cel_shading, materials);
 
   glutMainLoop();
 }

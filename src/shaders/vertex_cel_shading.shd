@@ -9,11 +9,13 @@ layout(location=0) in vec3 position;
 layout(location=1) in vec3 color;
 layout(location=2) in vec3 normalFlat;
 layout(location=3) in vec2 uv;
+layout(location = 4) in int material_id;
 
 out vec3 light_dir;
 out vec3 normal;
 out vec2 uv_position;
 out float viewDistance;
+flat out int mat_id;
 
 void main() {
     gl_Position = projection * camera * vec4(position, 1.0);
@@ -23,4 +25,5 @@ void main() {
 
     vec4 viewPos = camera * vec4(position, 1.0);
     viewDistance = -viewPos.z;
+    mat_id = material_id;
 }
