@@ -1,0 +1,43 @@
+#version 450
+
+in vec3 light_dir;
+in vec3 normal;
+in float viewDistance;
+
+uniform bool smoothed;
+
+layout(location=0) out vec4 output_color;
+
+vec4 color;
+
+void main() {
+    float d = max(0.0, dot(light_dir, normal));
+
+    // Compute D --> Details based on distance
+    float D;
+    if (smoothed) {
+        D = 1.0 - clamp(viewDistance / 120.0, 0.0, 1.0);
+    }
+    else {
+        D = 1.0 - log(viewDistance) / log(200);
+    }
+    D = pow(D, 0.5);
+    D = clamp(D, 0.0, 1.0);
+    
+    if (d > 0.95)
+        color = vec4(1.0,0.5,0.5,1.0);
+	else if (d > 0.5)
+        color = vec4(0.6,0.3,0.3,1.0);
+	else if (d > 0.25)
+        color = vec4(0.4,0.2,0.2,1.0);
+	else
+        color = vec4(0.2,0.1,0.1,1.0);
+
+
+    float diffuse = max(0.0, dot(normal, light_dir));
+    float levels = mix(2.0, 4.0, D);
+    float toonLight = min(1.0, floor(diffuse * levels) / (levels - 1.0));
+    
+    output_color = vec4(color.rgb * toonLight, color.a);
+    
+}

@@ -1,0 +1,21 @@
+#version 450
+
+uniform mat4 camera;
+uniform mat4 projection;
+uniform vec3 light_pos;
+
+layout(location=0) in vec3 position;
+layout(location=2) in vec3 normalFlat;
+
+out vec3 light_dir;
+out vec3 normal;
+out float viewDistance;
+
+void main() {
+    gl_Position = projection * camera * vec4(position, 1.0);
+	normal = normalize(normalFlat);
+	light_dir = normalize(light_pos - position);
+
+    vec4 viewPos = camera * vec4(position, 1.0);
+    viewDistance = -viewPos.z;
+}

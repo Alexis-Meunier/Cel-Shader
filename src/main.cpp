@@ -31,7 +31,8 @@ GLuint object_id = 0;
 bool is_smoothed = GL_FALSE;
 bool is_toonShaded = GL_FALSE;
 
-const std::string obj_dir = "../objects/Woman/source/";
+std::string obj_dir;
+std::string obj_file;
 
 /*
 "../objects/Other/source/Meshy_AI_Elven_Warrior_in_Gree_0512141219_texture_obj/"
@@ -274,7 +275,6 @@ void init_textures(program *prog, const std::vector<tinyobj::material_t>& materi
     std::cout << "size: " << img.width << "x" << img.height << std::endl;
 
     std::string name = "textures[" + std::to_string(i) + "]";
-    GLint loc = glGetUniformLocation(prog->program_id, name.c_str());
 
     GLint sampler_id = glGetUniformLocation(prog->program_id, name.c_str());TEST_OPENGL_ERROR();
     if (sampler_id == -1)
@@ -344,7 +344,7 @@ bool init_object(std::vector<tinyobj::material_t>& materials) {
   std::vector<tinyobj::shape_t> shapes;
   std::string warnings;
   std::string errors;
-  tinyobj::LoadObj(&attributes, &shapes, &materials, &warnings, &errors, (obj_dir + "npc_erica.obj").c_str(), obj_dir.c_str());
+  tinyobj::LoadObj(&attributes, &shapes, &materials, &warnings, &errors, (obj_dir + obj_file).c_str(), obj_dir.c_str());
 
   std::vector<GLfloat> positions;
   std::vector<GLfloat> normals;
@@ -492,6 +492,16 @@ bool init_POV(program* prog) {
 // }
 
 int main(int argc, char *argv[]) {
+  if (argc != 4) {
+    std::cerr << "CelShading [WITH_TEXTURE] [DIRECTORY] [FILE]" << std::endl;
+    return 1;
+  }
+
+  std::string with_texture = argv[1];
+  obj_dir = argv[2];
+  obj_dir += "/";
+  obj_file = argv[3];
+
   init_glut(argc, argv);
   if (!init_glew())
     std::exit(-1);
@@ -505,7 +515,12 @@ int main(int argc, char *argv[]) {
     return 1;
 
   // Create second program with the cel shading shaders
-  prog_cel_shading = program::make_program("shaders/vertex_cel_shading.shd", "shaders/fragment_cel_shading.shd");
+  if (with_texture == "0") {
+    prog_cel_shading = program::make_program("shaders/vertex_cel_shading_without_texture.shd", "shaders/fragment_cel_shading_without_texture.shd");
+  } else {
+    prog_cel_shading = program::make_program("shaders/vertex_cel_shading.shd", "shaders/fragment_cel_shading.shd");
+  }
+  
   if (prog_cel_shading == nullptr || !prog_cel_shading->is_ready())
     return 1;
 
@@ -522,7 +537,9 @@ int main(int argc, char *argv[]) {
   // Initialization for the cel shading program
   init_shaders(prog_cel_shading);
   init_POV(prog_cel_shading);
-  init_textures(prog_cel_shading, materials);
+  if (with_texture != "0") {
+    init_textures(prog_cel_shading, materials);
+  }
 
   glutMainLoop();
 }
