@@ -16,7 +16,7 @@ vec3 normal;
 vec3 offset;
 
 void main() {
-    LineThickness = 0.1;
+    LineThickness = 0.03;
     normal = normalize(normalFlat);
     offset = normal * LineThickness;
     gl_Position = projection * camera * vec4(position + offset, 1.0);
