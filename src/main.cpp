@@ -29,14 +29,16 @@ GLsizei skull_vertex_count = 0;
 GLuint object_id = 0;
 
 bool is_smoothed = GL_FALSE;
+bool is_toonShaded = GL_FALSE;
 
-const std::string obj_dir = "../objects/Woman3/source/";
+const std::string obj_dir = "../objects/Woman/source/";
 
 /*
 "../objects/Other/source/Meshy_AI_Elven_Warrior_in_Gree_0512141219_texture_obj/"
-../objects/Woman/source/
 ../objects/Batman/2567_open3dmodel/Batman/
+../objects/Woman/source/
 ../objects/Woman2/source/
+../objects/Woman3/source/
 */
 
 bool locked = true;
@@ -45,6 +47,8 @@ float camX = 0.0f, camY = 0.0f, camZ = -50.0f;
 float lightX = 0.0f, lightY = 50.0f, lightZ = -20.0f;
 float horizAngl = 90.0f;
 float vertAngl = 0.0f;
+GLfloat lineThickness = 0.03f;
+GLfloat lineStep = 0.02f;
 const float CAM_SPEED = 2.0f;
 const float MOUSE_SENS = 0.2f;
 
@@ -115,6 +119,8 @@ void handleKeyboard(unsigned char key, int x, int y) {
         case 'j': lightX -= fx * CAM_SPEED; lightY -= fy * CAM_SPEED; lightZ -= fz * CAM_SPEED; break;
         case 'k': lightX -= rx * CAM_SPEED; lightY -= ry * CAM_SPEED; lightZ -= rz * CAM_SPEED; break;
         case 'h': lightX += rx * CAM_SPEED; lightY += ry * CAM_SPEED; lightZ += rz * CAM_SPEED; break;
+        case 'y': lightY += CAM_SPEED; break;
+        case 'i': lightY -= CAM_SPEED; break;
       // lock cursor when `space`
         case ' ':
           locked = !locked;
@@ -137,6 +143,30 @@ void handleKeyboard(unsigned char key, int x, int y) {
           smooth_location = glGetUniformLocation(prog_cel_shading->program_id, "smoothed");TEST_OPENGL_ERROR();
           glUniform1i(smooth_location, is_smoothed);TEST_OPENGL_ERROR();
           break;
+        case 't':
+          is_toonShaded = !is_toonShaded;
+          smooth_location = glGetUniformLocation(prog_cel_shading->program_id, "toonShaded");TEST_OPENGL_ERROR();
+          glUniform1i(smooth_location, is_toonShaded);TEST_OPENGL_ERROR();
+          break;
+        case '+':
+            lineThickness += lineStep;
+            glUseProgram(prog_edge->program_id);
+            smooth_location = glGetUniformLocation(prog_edge->program_id, "LineThickness");
+            if (smooth_location == -1)
+                std::cout << "LineThickness error" << std::endl;
+            else
+                glUniform1f(smooth_location, lineThickness);
+            break;
+        case '-':
+            lineThickness -= lineStep;
+            lineThickness = std::max(lineThickness, 0.0f);
+            glUseProgram(prog_edge->program_id);
+            smooth_location = glGetUniformLocation(prog_edge->program_id, "LineThickness");
+            if (smooth_location == -1)
+                std::cout << "LineThickness error" << std::endl;
+            else
+                glUniform1f(smooth_location, lineThickness);
+            break;
       // if `escape` then close window
         case 27: exit(0);
     }
@@ -314,7 +344,7 @@ bool init_object(std::vector<tinyobj::material_t>& materials) {
   std::vector<tinyobj::shape_t> shapes;
   std::string warnings;
   std::string errors;
-  tinyobj::LoadObj(&attributes, &shapes, &materials, &warnings, &errors, (obj_dir + "mon_raviel.obj").c_str(), obj_dir.c_str());
+  tinyobj::LoadObj(&attributes, &shapes, &materials, &warnings, &errors, (obj_dir + "npc_erica.obj").c_str(), obj_dir.c_str());
 
   std::vector<GLfloat> positions;
   std::vector<GLfloat> normals;

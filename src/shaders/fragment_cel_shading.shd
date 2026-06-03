@@ -7,6 +7,7 @@ in float viewDistance;
 flat in int mat_id;
 
 uniform bool smoothed;
+uniform bool toonShaded;
 uniform sampler2D textures[10];
 
 layout(location=0) out vec4 output_color;
@@ -31,5 +32,12 @@ void main() {
     float levels = mix(2.0, 4.0, D);
     float toonLight = min(1.0, floor(diffuse * levels) / (levels - 1.0));
 
-    output_color = vec4(color.rgb * toonLight, color.a);
+    if (toonShaded)
+    {
+        output_color = vec4(color.rgb * toonLight, color.a);
+    }
+    else
+    {
+        output_color = color;
+    }
 }
