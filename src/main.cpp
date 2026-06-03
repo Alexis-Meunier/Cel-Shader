@@ -25,9 +25,12 @@ program* prog_cel_shading = nullptr;
 GLsizei skull_vertex_count = 0;
 GLuint object_id = 0;
 
+bool is_smoothed = GL_FALSE;
+
 bool locked = true;
 
 float camX = 0.0f, camY = 0.0f, camZ = -50.0f;
+float lightX = 0.0f, lightY = 50.0f, lightZ = -20.0f;
 float horizAngl = 90.0f;
 float vertAngl = 0.0f;
 const float CAM_SPEED = 2.0f;
@@ -84,6 +87,7 @@ void get_camera_dirs(float& fx, float& fy, float& fz,
 void handleKeyboard(unsigned char key, int x, int y) {
     float fx, fy, fz, rx, ry, rz;
     get_camera_dirs(fx, fy, fz, rx, ry, rz);
+    GLint smooth_location;
 
     switch (key) {
       // Z-Axis movement
@@ -95,8 +99,12 @@ void handleKeyboard(unsigned char key, int x, int y) {
       // Y-Axis movement
         case 'q': camY += CAM_SPEED; break;
         case 'e': camY -= CAM_SPEED; break;
+        case 'u': lightX += fx * CAM_SPEED; lightY += fy * CAM_SPEED; lightZ += fz * CAM_SPEED; break;
+        case 'j': lightX -= fx * CAM_SPEED; lightY -= fy * CAM_SPEED; lightZ -= fz * CAM_SPEED; break;
+        case 'k': lightX -= rx * CAM_SPEED; lightY -= ry * CAM_SPEED; lightZ -= rz * CAM_SPEED; break;
+        case 'h': lightX += rx * CAM_SPEED; lightY += ry * CAM_SPEED; lightZ += rz * CAM_SPEED; break;
       // lock cursor when `space`
-        case 32:
+        case ' ':
           locked = !locked;
           if (locked) {
               glutSetCursor(GLUT_CURSOR_NONE);
@@ -111,6 +119,11 @@ void handleKeyboard(unsigned char key, int x, int y) {
           camX = 0.0f, camY = 0.0f, camZ = -50.0f;
           horizAngl = 90.0f;
           vertAngl = 0.0f;
+          break;
+        case '\t':
+          is_smoothed = !is_smoothed;
+          smooth_location = glGetUniformLocation(prog_cel_shading->program_id, "smoothed");TEST_OPENGL_ERROR();
+          glUniform1i(smooth_location, is_smoothed);TEST_OPENGL_ERROR();
           break;
       // if `escape` then close window
         case 27: exit(0);
@@ -140,10 +153,23 @@ void update_camera() {
     glUniformMatrix4fv(camera_location, 1, GL_TRUE, camera_mat.get_values());
 }
 
+void update_light() {
+    // Update Cel Shading Program
+    glUseProgram(prog_cel_shading->program_id);TEST_OPENGL_ERROR();
+    GLint light_pos_location = glGetUniformLocation(prog_cel_shading->program_id, "light_pos");
+    glUniform3f(light_pos_location, lightX, lightY, lightZ);
+    
+    // Update Edge Program
+    glUseProgram(prog_edge->program_id);TEST_OPENGL_ERROR();
+    light_pos_location = glGetUniformLocation(prog_edge->program_id, "light_pos");
+    glUniform3f(light_pos_location, lightX, lightY, lightZ);
+}
+
 void display() {
   // Initialization for both program 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);TEST_OPENGL_ERROR();
   update_camera();
+  update_light();
   glBindVertexArray(object_id);TEST_OPENGL_ERROR();
   glEnable(GL_CULL_FACE);TEST_OPENGL_ERROR();
   
