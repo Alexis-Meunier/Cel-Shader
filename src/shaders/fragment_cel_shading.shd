@@ -6,6 +6,7 @@ in vec2 uv_position;
 in float viewDistance;
 flat in int mat_id;
 
+uniform bool smoothed;
 uniform sampler2D textures[10];
 
 layout(location=0) out vec4 output_color;
@@ -14,7 +15,13 @@ void main() {
     float d = max(0.0, dot(light_dir, normal));
 
     // Compute D --> Details based on distance
-    float D = 1.0 - clamp(viewDistance / 120.0, 0.0, 1.0);
+    float D;
+    if (smoothed) {
+        D = 1.0 - clamp(viewDistance / 120.0, 0.0, 1.0);
+    }
+    else {
+        D = 1.0 - log(viewDistance) / log(200);
+    }
     D = pow(D, 0.5);
     D = clamp(D, 0.0, 1.0);
 
