@@ -1,5 +1,12 @@
 #version 450
 
+struct Material {
+    vec3 Kd;
+    bool has_texture;
+};
+
+uniform Material materials[19];
+
 in vec3 light_dir;
 in vec3 normal;
 in vec2 uv_position;
@@ -26,7 +33,14 @@ void main() {
     D = pow(D, 0.5);
     D = clamp(D, 0.0, 1.0);
 
-	vec4 color = texture(textures[mat_id], uv_position);
+    vec4 color;
+    if (materials[mat_id].has_texture) {
+        color = texture(textures[mat_id], uv_position);
+    } else {
+        color = vec4(materials[mat_id].Kd, 1.0);
+    }
+
+    // vec4 color = vec4(materials[mat_id].Kd, 1.0);
 
     float diffuse = max(0.0, dot(normal, light_dir));
     float levels = mix(2.0, 4.0, D);

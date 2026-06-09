@@ -30,6 +30,7 @@ GLuint object_id = 0;
 
 bool is_smoothed = GL_FALSE;
 bool is_toonShaded = GL_FALSE;
+float scale = 1.0f;
 
 std::string obj_dir;
 std::string obj_file;
@@ -373,7 +374,6 @@ bool init_object(std::vector<tinyobj::material_t>& materials) {
         auto y_normal = attributes.normals[i.normal_index * 3 + 1];
         auto z_normal = attributes.normals[i.normal_index * 3 + 2];
 
-        auto scale = 0.5;
         auto rad = M_PI / 180.0;
         auto rotation = Point{0,180,0};
 
@@ -402,6 +402,7 @@ bool init_object(std::vector<tinyobj::material_t>& materials) {
   
   //objectData skull = LoadOBJ("../objects/Other/source/Meshy_AI_Elven_Warrior_in_Gree_0512141219_texture_obj/Meshy_AI_Elven_Warrior_in_Gree_0512141219_texture.obj", {0, 0, 0}, 5.0, {0, 180, 0});
   skull_vertex_count = positions.size() / 3;
+  std::cout << "count: " << skull_vertex_count << std::endl;
 
   std::vector<GLfloat> vertex_buffer_data = positions;
   std::vector<GLfloat> normal_flat_buffer_data = normals;
@@ -443,6 +444,27 @@ bool init_object(std::vector<tinyobj::material_t>& materials) {
 
   std::cout << "Finished init_object" << std::endl;
   return true;
+}
+
+void init_materials(program* prog, const std::vector<tinyobj::material_t>& materials) {
+    glUseProgram(prog->program_id);
+
+    for (size_t i = 0; i < materials.size(); i++) {
+        // Upload Kd
+        std::string kd_name = "materials[" + std::to_string(i) + "].Kd";
+        GLint kd_loc = glGetUniformLocation(prog->program_id, kd_name.c_str());
+        if (kd_loc != -1)
+            glUniform3f(kd_loc, materials[i].diffuse[0],
+                                materials[i].diffuse[1],
+                                materials[i].diffuse[2]);
+
+        // Upload has_texture
+        std::string ht_name = "materials[" + std::to_string(i) + "].has_texture";
+        GLint ht_loc = glGetUniformLocation(prog->program_id, ht_name.c_str());
+        bool has_tex = !materials[i].diffuse_texname.empty();
+        if (ht_loc != -1)
+            glUniform1i(ht_loc, has_tex ? 1 : 0);
+    }
 }
 
 bool init_POV(program* prog) {
@@ -492,8 +514,8 @@ bool init_POV(program* prog) {
 // }
 
 int main(int argc, char *argv[]) {
-  if (argc != 4) {
-    std::cerr << "CelShading [WITH_TEXTURE] [DIRECTORY] [FILE]" << std::endl;
+  if (argc != 5) {
+    std::cerr << "CelShading [WITH_TEXTURE] [DIRECTORY] [FILE] [SCALE]" << std::endl;
     return 1;
   }
 
@@ -501,6 +523,7 @@ int main(int argc, char *argv[]) {
   obj_dir = argv[2];
   obj_dir += "/";
   obj_file = argv[3];
+  scale = std::stof(argv[4]);
 
   init_glut(argc, argv);
   if (!init_glew())
@@ -537,6 +560,8 @@ int main(int argc, char *argv[]) {
   // Initialization for the cel shading program
   init_shaders(prog_cel_shading);
   init_POV(prog_cel_shading);
+  init_materials(prog_cel_shading, materials);  // always
+  // init_textures(prog_cel_shading, materials);
   if (with_texture != "0") {
     init_textures(prog_cel_shading, materials);
   }
