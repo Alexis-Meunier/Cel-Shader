@@ -1,4 +1,4 @@
-#include "matrix.hh"
+#include "utils/matrix.hh"
 
 #include <cmath>
 
@@ -137,7 +137,7 @@ GLfloat *matrix4::get_values()
 {
     int index = 0;
     GLfloat *vals = new GLfloat[16 * sizeof(GLfloat)];
-    for(const auto arr : values)
+    for(const auto& arr : values)
     {
         for (const auto val : arr)
         {

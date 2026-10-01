@@ -1,4 +1,4 @@
-#include "program.hh"
+#include "program/program.hh"
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
@@ -78,7 +78,6 @@ program *program::make_program(const std::string& vertex_shader_src, const std::
             prog->add_logs(logs);
             std::cout << "vertex: " << prog->get_log() << std::endl;
             std::cout << "added logs" << std::endl;
-            std::free(logs);
         }
 
         return nullptr;
@@ -104,7 +103,6 @@ program *program::make_program(const std::string& vertex_shader_src, const std::
             glGetShaderInfoLog(fragment_id, fragment_log_size, &fragment_log_size, logs);TEST_OPENGL_ERROR();
             prog->add_logs(logs);
             std::cout << "fragment: " << logs << std::endl;
-            std::free(logs);
         }
 
         return nullptr;
@@ -130,7 +128,6 @@ program *program::make_program(const std::string& vertex_shader_src, const std::
             glGetProgramInfoLog(program_id, program_log_size, &program_log_size, logs);TEST_OPENGL_ERROR();
             prog->add_logs(logs);
             std::cout<< "program: "  << logs << std::endl;
-            std::free(logs);
         }
 
         return nullptr;
@@ -156,6 +153,6 @@ bool program::is_ready()
 
 void program::use()
 {
-    _is_active = true; // idk man
+    _is_active = true;
 }
 

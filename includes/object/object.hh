@@ -4,7 +4,7 @@
 #include <vector>
 #include <cmath>
 
-#include "point.hh"
+#include "utils/point.hh"
 
 using std::vector;
 

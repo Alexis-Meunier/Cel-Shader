@@ -7,11 +7,10 @@
 #include <cstring>
 #include <string>
 
-#include "matrix.hh"
-#include "object.hh"
-#include "program.hh"
-#include "object_data.hh"
-#include "texture.hh"
+#include "utils/matrix.hh"
+#include "object/object.hh"
+#include "program/program.hh"
+#include "texture/texture.hh"
 #include "tiny_obj_loader.hh"
 
 #define WINDOW_HORIZ_MID 512
@@ -34,14 +33,6 @@ float scale = 1.0f;
 
 std::string obj_dir;
 std::string obj_file;
-
-/*
-"../objects/Other/source/Meshy_AI_Elven_Warrior_in_Gree_0512141219_texture_obj/"
-../objects/Batman/2567_open3dmodel/Batman/
-../objects/Woman/source/
-../objects/Woman2/source/
-../objects/Woman3/source/
-*/
 
 bool locked = true;
 
@@ -69,12 +60,10 @@ void handleMouseLook(int x, int y) {
     }
 
     float dx = (x - CX) * MOUSE_SENS;
-    // We flip on y because the coordinates are inversed ?
     float dy = (CY - y) * MOUSE_SENS;
 
     horizAngl += dx;
     vertAngl += dy;
-    // Clamp so we can't loop
     if (vertAngl >  89.0f) vertAngl =  89.0f;
     if (vertAngl < -89.0f) vertAngl = -89.0f;
 
@@ -87,11 +76,9 @@ void handleMouseLook(int x, int y) {
 void get_camera_dirs(float& fx, float& fy, float& fz,
                      float& rx, float& ry, float& rz)
 {
-    // get Angle as radians
     float radhorizAngl = horizAngl * M_PI / 180.0f;
     float radvertAngl = vertAngl * M_PI / 180.0f;
 
-    // Forward vector
     fx = cos(radvertAngl) * cos(radhorizAngl);
     fy = sin(radvertAngl);
     fz = cos(radvertAngl) * sin(radhorizAngl);
@@ -135,7 +122,7 @@ void handleKeyboard(unsigned char key, int x, int y) {
               glutPassiveMotionFunc(nullptr);
           }
           break;
-        case 13:
+        case 13: // Enter key
           camX = 0.0f, camY = 0.0f, camZ = -50.0f;
           horizAngl = 90.0f;
           vertAngl = 0.0f;
@@ -324,23 +311,12 @@ bool init_shaders(program* prog) {
 bool init_object(std::vector<tinyobj::material_t>& materials) {
   GLuint vbo_ids[1];
 
-  // Cleaner way of doing it but for some reason it fails for some variables ???
-  // GLint vertex_location = glGetAttribLocation(prog->program_id,"position");TEST_OPENGL_ERROR();
-
   GLint vertex_location = 0;
   GLint color_location = 1;
   GLint normal_flat_location = 2;
   GLint uv_location = 3;
   GLint material_ids_location = 4;
 
-  // if (vertex_location == -1)
-  //   std::cout << "Vertex location is -1 :(" << std::endl;
-  // if (color_location == -1)
-  //   std::cout << "Color location is -1 :(" << std::endl;
-  // if (normal_flat_location == -1)
-  //   std::cout << "Normal flat location is -1 :(" << std::endl;
-  // if (uv_location == -1)
-  //   std::cout << "uv location is -1 :(" << std::endl;
   tinyobj::attrib_t attributes;
   std::vector<tinyobj::shape_t> shapes;
   std::string warnings;
@@ -352,18 +328,17 @@ bool init_object(std::vector<tinyobj::material_t>& materials) {
   std::vector<GLfloat> uv_positions;
   std::vector<GLuint> material_ids;
 
-
-  for (int i = 0; i < shapes.size(); i ++) {
+  for (size_t i = 0; i < shapes.size(); i ++) {
     tinyobj::shape_t &shape = shapes[i];
     tinyobj::mesh_t &mesh = shape.mesh;
 
-    for (int j = 0; j < mesh.material_ids.size(); j++) {
+    for (size_t j = 0; j < mesh.material_ids.size(); j++) {
       material_ids.push_back(mesh.material_ids[j]);
       material_ids.push_back(mesh.material_ids[j]);
       material_ids.push_back(mesh.material_ids[j]);
     }
 
-    for (int j = 0; j < mesh.indices.size(); j++) {
+    for (size_t j = 0; j < mesh.indices.size(); j++) {
         tinyobj::index_t i = mesh.indices[j];
 
         auto x = attributes.vertices[i.vertex_index * 3];
@@ -400,7 +375,6 @@ bool init_object(std::vector<tinyobj::material_t>& materials) {
     }
   }
   
-  //objectData skull = LoadOBJ("../objects/Other/source/Meshy_AI_Elven_Warrior_in_Gree_0512141219_texture_obj/Meshy_AI_Elven_Warrior_in_Gree_0512141219_texture.obj", {0, 0, 0}, 5.0, {0, 180, 0});
   skull_vertex_count = positions.size() / 3;
   std::cout << "count: " << skull_vertex_count << std::endl;
 
@@ -409,7 +383,7 @@ bool init_object(std::vector<tinyobj::material_t>& materials) {
   std::vector<GLfloat> uv_buffer_data = uv_positions;
 
   auto vertex_size = vertex_buffer_data.size() * sizeof(GLfloat);
-  auto color_size = color_buffer_data.size() * sizeof(GLfloat);
+  // auto color_size = color_buffer_data.size() * sizeof(GLfloat);
   auto normal_flat_size = normal_flat_buffer_data.size() * sizeof(GLfloat);
   auto uv_size = uv_buffer_data.size() * sizeof(GLfloat);
   auto material_ids_size = material_ids.size() * sizeof(GLuint);
@@ -418,23 +392,22 @@ bool init_object(std::vector<tinyobj::material_t>& materials) {
   glGenVertexArrays(1, &object_id);TEST_OPENGL_ERROR();
   glBindVertexArray(object_id);TEST_OPENGL_ERROR();
 
-  auto size = vertex_size + color_size + normal_flat_size + uv_size + material_ids_size;
+  auto size = vertex_size + /*color_size +*/ normal_flat_size + uv_size + material_ids_size;
   char *vbo = new char[size];
   std::memcpy(vbo, vertex_buffer_data.data(), vertex_size);
-  std::memcpy(vbo + vertex_size, color_buffer_data.data(), color_size);
-  std::memcpy(vbo + vertex_size + color_size, normal_flat_buffer_data.data(), normal_flat_size);
-  std::memcpy(vbo + vertex_size + color_size + normal_flat_size, uv_positions.data(), uv_size);
-  std::memcpy(vbo + vertex_size + color_size + normal_flat_size + uv_size, material_ids.data(), material_ids_size);
-
+  // std::memcpy(vbo + vertex_size, color_buffer_data.data(), color_size);
+  std::memcpy(vbo + vertex_size /*+ color_size */, normal_flat_buffer_data.data(), normal_flat_size);
+  std::memcpy(vbo + vertex_size /*+ color_size */ + normal_flat_size, uv_positions.data(), uv_size);
+  std::memcpy(vbo + vertex_size /*+ color_size */ + normal_flat_size + uv_size, material_ids.data(), material_ids_size);
 
   glBindBuffer(GL_ARRAY_BUFFER, vbo_ids[0]);TEST_OPENGL_ERROR();
   glBufferData(GL_ARRAY_BUFFER, size, vbo, GL_STATIC_DRAW);TEST_OPENGL_ERROR();
   
   glVertexAttribPointer(vertex_location, 3, GL_FLOAT, GL_FALSE, 0, 0);TEST_OPENGL_ERROR();
-  glVertexAttribPointer(color_location, 3, GL_FLOAT, GL_FALSE, 0, (void *)(vertex_size));TEST_OPENGL_ERROR();
-  glVertexAttribPointer(normal_flat_location, 3, GL_FLOAT, GL_FALSE, 0, (void *)(vertex_size + color_size));TEST_OPENGL_ERROR();
-  glVertexAttribPointer(uv_location, 2, GL_FLOAT, GL_FALSE, 0, (void *)(vertex_size + color_size + normal_flat_size));TEST_OPENGL_ERROR();
-  glVertexAttribIPointer(material_ids_location, 1, GL_INT, GL_FALSE, (void*)(vertex_size + color_size + normal_flat_size + uv_size));TEST_OPENGL_ERROR();
+  // glVertexAttribPointer(color_location, 3, GL_FLOAT, GL_FALSE, 0, (void *)(vertex_size));TEST_OPENGL_ERROR();
+  glVertexAttribPointer(normal_flat_location, 3, GL_FLOAT, GL_FALSE, 0, (void *)(vertex_size/* + color_size*/));TEST_OPENGL_ERROR();
+  glVertexAttribPointer(uv_location, 2, GL_FLOAT, GL_FALSE, 0, (void *)(vertex_size/* + color_size*/ + normal_flat_size));TEST_OPENGL_ERROR();
+  glVertexAttribIPointer(material_ids_location, 1, GL_INT, GL_FALSE, (void*)(vertex_size/* + color_size*/ + normal_flat_size + uv_size));TEST_OPENGL_ERROR();
 
   glEnableVertexAttribArray(vertex_location);TEST_OPENGL_ERROR();
   glEnableVertexAttribArray(color_location);TEST_OPENGL_ERROR();
@@ -474,15 +447,6 @@ bool init_POV(program* prog) {
   GLint light_pos_location = glGetUniformLocation(prog->program_id, "light_pos");TEST_OPENGL_ERROR();
   GLint light_color_location = glGetUniformLocation(prog->program_id, "light_color");TEST_OPENGL_ERROR();
 
-  // auto camera_mat = look_at(20, 20, 20,
-            //  0, 0, 0,
-            //  0, 1, 0
-            //  );
-  // auto proj_mat = frustum(-1, 1, -1, 1,
-        //   //  5, 50000
-        //  );
-  // auto camera_mat = look_at(0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, 3.0, 0.0);
-  // auto proj_mat = frustum(-1.0, 1.0, -1.0, 1.0, 3.0, 30000.0);
   auto camera_mat = look_at(0.0, 0.0, -50.0,   // eye
                            0.0, 0.0,  100.0,  // look at skull
                            0.0, 1.0,  0.0);   // up
@@ -497,21 +461,6 @@ bool init_POV(program* prog) {
   std::cout << "Finished init_POV" << std::endl;
   return true;
 }
-
-// void init_uniforms()
-// {
-//   GLint light_pos_location = glGetUniformLocation(prog->program_id, "light_pos");TEST_OPENGL_ERROR();
-//   GLint light_color_location = glGetUniformLocation(prog->program_id, "light_color");TEST_OPENGL_ERROR();
-//   // GLint nbImageColors_location = glGetUniformLocation(prog->program_id, "nbImageColors");TEST_OPENGL_ERROR();
-//   // GLint nbLightColors_location = glGetUniformLocation(prog->program_id, "nbLightColors");TEST_OPENGL_ERROR();
-
-//   glUniform3f(light_pos_location, -50.0, 50.0, 100.0);TEST_OPENGL_ERROR(); // The position of the light
-//   glUniform3f(light_color_location, 1, 1, 1);TEST_OPENGL_ERROR(); // The color of the light
-//   // glUniform1f(nbImageColors_location, 6.0); TEST_OPENGL_ERROR(); // The number of colors for the image of our cel-shading
-//   // glUniform1f(nbLightColors_location, 8.0); TEST_OPENGL_ERROR(); // The number of colors for the light of our cel-shading
-
-//   std::cout << "Finished init_uniforms" << std::endl;
-// }
 
 int main(int argc, char *argv[]) {
   if (argc != 5) {

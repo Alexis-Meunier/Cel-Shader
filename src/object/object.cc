@@ -1,10 +1,10 @@
-#include "object.hh"
+#include "object/object.hh"
 
 #include <fstream>
 #include <sstream>
 #include <array>
 
-#include "matrix.hh"
+#include "utils/matrix.hh"
 
 objectData from_obj(const std::string& path, const Point& offset,
                     const float& scale, const Point& rotation)
@@ -223,7 +223,6 @@ objectData LoadOBJ(const std::string& path, const Point& offset,
                 std::array<float, 3> val20 = raw_verts[v20];
                 vec3 U(val10[0] - val00[0], val10[1] - val00[1], val10[2] - val00[2]);
                 vec3 V(val20[0] - val00[0], val20[1] - val00[1], val20[2] - val00[2]);
-                vec3 faceNormal = normalize(vec_prod(U, V));
 
                 for( size_t j = 0; j < 3; ++j )
                 {
