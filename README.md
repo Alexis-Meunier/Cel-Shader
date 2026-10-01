@@ -2,6 +2,8 @@
 
 A real-time **cel shader (toon shader)** written in C++20 with OpenGL, GLEW and GLUT. It loads `.obj` models, renders them with banded toon lighting, and draws a configurable black outline around them.
 
+![skull](render2.png)
+
 This project started as a school assignment to learn OpenGL, built together with my teammate [Zarvork](https://github.com/Zarvork).
 
 ## Features
